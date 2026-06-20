@@ -1,0 +1,104 @@
+[
+  {
+    "model": "subscriptions.subscriptionplan",
+    "fields": {
+      "plan_type": "free",
+      "name": "Free",
+      "description": "Basic safety features for individuals",
+      "price_usd": "0.00",
+      "price_som": "0.00",
+      "max_family_members": 5,
+      "history_retention_days": 7,
+      "ai_safety_analysis": false,
+      "video_recording": false,
+      "cloud_backup": false,
+      "priority_notifications": false,
+      "is_active": true
+    }
+  },
+  {
+    "model": "subscriptions.subscriptionplan",
+    "fields": {
+      "plan_type": "premium_monthly",
+      "name": "Premium Monthly",
+      "description": "Full safety features with AI analysis and cloud backup",
+      "price_usd": "4.99",
+      "price_som": "420.00",
+      "max_family_members": 10,
+      "history_retention_days": 365,
+      "ai_safety_analysis": true,
+      "video_recording": true,
+      "cloud_backup": true,
+      "priority_notifications": true,
+      "is_active": true
+    }
+  },
+  {
+    "model": "subscriptions.subscriptionplan",
+    "fields": {
+      "plan_type": "premium_yearly",
+      "name": "Premium Yearly",
+      "description": "Full safety features at a discounted annual rate",
+      "price_usd": "39.99",
+      "price_som": "3400.00",
+      "max_family_members": 10,
+      "history_retention_days": 365,
+      "ai_safety_analysis": true,
+      "video_recording": true,
+      "cloud_backup": true,
+      "priority_notifications": true,
+      "is_active": true
+    }
+  },
+  {
+    "model": "subscriptions.subscriptionplan",
+    "fields": {
+      "plan_type": "family_monthly",
+      "name": "Family Monthly",
+      "description": "Unlimited family members with all premium features",
+      "price_usd": "9.99",
+      "price_som": "840.00",
+      "max_family_members": 100,
+      "history_retention_days": 365,
+      "ai_safety_analysis": true,
+      "video_recording": true,
+      "cloud_backup": true,
+      "priority_notifications": true,
+      "is_active": true
+    }
+  },
+  {
+    "model": "subscriptions.subscriptionplan",
+    "fields": {
+      "plan_type": "family_yearly",
+      "name": "Family Yearly",
+      "description": "Unlimited family members at a discounted annual rate",
+      "price_usd": "79.99",
+      "price_som": "6800.00",
+      "max_family_members": 100,
+      "history_retention_days": 365,
+      "ai_safety_analysis": true,
+      "video_recording": true,
+      "cloud_backup": true,
+      "priority_notifications": true,
+      "is_active": true
+    }
+  },
+  {
+    "model": "subscriptions.subscriptionplan",
+    "fields": {
+      "plan_type": "corporate",
+      "name": "Corporate",
+      "description": "Enterprise solution for organizations and security companies",
+      "price_usd": "49.99",
+      "price_som": "4200.00",
+      "max_family_members": 500,
+      "history_retention_days": 365,
+      "ai_safety_analysis": true,
+      "video_recording": true,
+      "cloud_backup": true,
+      "priority_notifications": true,
+      "is_active": true
+    }
+  }
+]

@@ -1,0 +1,32 @@
+from django.contrib import admin
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+
+api_prefix = 'api/v1/'
+
+urlpatterns = [
+    # Admin
+    path('admin/', admin.site.urls),
+
+    # API Docs
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+
+    # Qorgo API v1
+    path(api_prefix, include('accounts.urls')),
+    path(api_prefix, include('families.urls')),
+    path(api_prefix, include('sos.urls')),
+    path(api_prefix, include('location.urls')),
+    path(api_prefix, include('geofences.urls')),
+    path(api_prefix, include('safety_timers.urls')),
+    path(api_prefix, include('notifications.urls')),
+    path(api_prefix, include('subscriptions.urls')),
+    path(api_prefix, include('analytics.urls')),
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
