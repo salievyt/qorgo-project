@@ -10,8 +10,8 @@ from .services import create_alert, process_deadlines, process_deliveries
 
 class SafetyApiTests(APITestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_user(username='owner@example.invalid', password='Qorgo-82-Strong!')
-        self.other = get_user_model().objects.create_user(username='other@example.invalid', password='Qorgo-93-Strong!')
+        self.user = get_user_model().objects.create_user(phone_number='+996700000010', email='owner@example.invalid', password='Qorgo-82-Strong!')
+        self.other = get_user_model().objects.create_user(phone_number='+996700000011', email='other@example.invalid', password='Qorgo-93-Strong!')
         self.client.force_authenticate(self.user)
         self.contact = Contact.objects.create(owner=self.user, name='Близкий', phone='+996700000000')
     def test_registration_validates_password(self):
@@ -19,7 +19,7 @@ class SafetyApiTests(APITestCase):
         self.assertEqual(self.client.post('/api/register/', {'email':'new@example.invalid','password':'123'}).status_code, 400)
         r = self.client.post('/api/register/', {'email':'new@example.invalid','password':'New-Qorgo-82-Strong!','name':'New'})
         self.assertEqual(r.status_code, 201)
-        self.assertTrue(get_user_model().objects.get(username='new@example.invalid').check_password('New-Qorgo-82-Strong!'))
+        self.assertTrue(get_user_model().objects.get(email='new@example.invalid').check_password('New-Qorgo-82-Strong!'))
     def test_authentication_and_contact_ownership(self):
         self.client = APIClient()
         self.assertEqual(self.client.get('/api/contacts/').status_code, 401)

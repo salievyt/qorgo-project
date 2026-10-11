@@ -1,2 +1,36 @@
+# Core
 Django>=5.2,<5.3
 djangorestframework>=3.16,<4
+djangorestframework-simplejwt==5.4.0
+django-cors-headers==4.6.0
+django-filter==24.3
+django-phonenumber-field==8.0.0
+phonenumbers==8.13.49
+
+# WebSockets / Real-time
+channels==4.2.0
+channels-redis==4.2.1
+daphne==4.1.2
+
+# Database
+psycopg2-binary>=2.9.11,<3
+
+# Background Tasks
+celery==5.4.0
+redis==5.2.1
+
+# Firebase (for FCM push notifications)
+firebase-admin==6.6.0
+
+# Image/File handling
+Pillow>=12,<13
+
+# API Documentation
+drf-spectacular[sidecar]==0.27.2
+django-jazzmin>=3,<4
+
+# Utilities
+python-decouple==3.8
+python-dotenv==1.0.1
+requests==2.32.3
+gunicorn==23.0.0

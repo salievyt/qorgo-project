@@ -1,34 +1,63 @@
 # QORGO API
 
-Django + Django REST Framework. Локальные постоянные данные находятся в `qorgo.sqlite3` (не включать в Git).
+Единый Django-проект в `backend/`: мобильный MVP и расширенный API используют одну модель пользователя `accounts.User` и одну базу данных. Папка `qorgo_backend/` объединена с этим проектом.
 
-## Запуск
+## Локальный запуск
+
+Из папки `backend/`:
 
 ```sh
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
+cp .env.example .env
 .venv/bin/python manage.py migrate
 .venv/bin/python manage.py runserver 127.0.0.1:8000 --noreload
 ```
 
-Во втором терминале:
+Настройки читают окружение и `.env`. По умолчанию используется SQLite `unified.sqlite3`. Для PostgreSQL задайте `DB_ENGINE=django.db.backends.postgresql`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`.
+
+В отдельном терминале запустите один worker для таймеров и отправки сообщений мобильного MVP:
 
 ```sh
 .venv/bin/python manage.py process_safety
 ```
 
-Worker проверяет таймеры и очередь каждые 2 секунды. Он должен работать постоянно; закрытие приложения не мешает обработке таймера, остановка сервера или worker мешает.
+Он проверяет очередь каждые 2 секунды. Закрытие мобильного приложения не мешает обработке таймера; остановка сервера или worker мешает. Расширенные задачи `/api/v1/` используют Celery и Redis:
 
-Тесты: `.venv/bin/python manage.py test safety`.
+```sh
+.venv/bin/celery -A qorgo worker -l info
+.venv/bin/celery -A qorgo beat -l info
+```
 
-## Настройка отправки
+Для WebSocket нужен Redis и ASGI-сервер: `.venv/bin/daphne -b 127.0.0.1 -p 8001 qorgo.asgi:application`.
 
-Пример имён переменных: `.env.example`. Приложение читает переменные окружения; файл `.env` автоматически не загружается.
+## Перенос прежней базы MVP
 
-- SMS: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM.
-- Email: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TLS.
+Исходный `qorgo.sqlite3` сохранён без изменений и не используется как новая база: в нём другой тип идентификатора пользователя. После миграций импортируйте его в пустую новую базу:
 
-Без провайдера сообщения получают статус `unconfigured`. Twilio имеет приоритет над SMTP. SMS/SMTP acceptance не является подтверждением доставки.
+```sh
+.venv/bin/python manage.py import_legacy_backend qorgo.sqlite3
+```
+
+Импорт переносит пользователей, хеши паролей, действующие Token-токены, контакты, тревоги, статусы доставки и сопровождения с сохранением связей и дат. Пользователи получают UUID; аккаунты, зарегистрированные по email, могут не иметь телефона. Импорт выполняется атомарно и отказывается работать с непустой целевой базой, чтобы не перезаписать данные. Повторный импорт не нужен. Существующая PostgreSQL-база расширенного проекта обновляется обычной командой `migrate`; автоматическое объединение двух непустых баз не выполняется.
+
+## Авторизация и совместимость
+
+- `/api/` сохраняет контракты Flutter MVP: email/password, `Authorization: Token …`, списки без пагинации и прежние ошибки.
+- `/api/v1/` сохраняет регистрацию и вход по телефону, `Authorization: Bearer …`, JWT, пагинацию и расширенные функции: семьи, SOS, геолокацию, геозоны, таймеры, уведомления, подписки и аналитику.
+- Обе версии работают с одной моделью пользователя. Контакты, тревоги и таймеры разных версий сохраняют собственные модели и контракты.
+- `/admin/` — админ-панель Jazzmin с оформлением QORGO и ссылками на документацию.
+- `/api/docs/` и `/api/swagger/` — Swagger UI; `/api/redoc/` — ReDoc; `/api/schema/` — OpenAPI.
+- В Swagger нажмите **Authorize**: для `/api/` используйте `Token <токен>`, для `/api/v1/` — JWT access token (Bearer). Документация доступна без входа; защищённые API требуют авторизации.
+- Swagger/ReDoc используют локальные статические ресурсы. При развёртывании выполните `python manage.py collectstatic --noinput` и настройте обслуживание `/static/` (в Docker это делает Nginx).
+- Создание администратора: `.venv/bin/python manage.py createsuperuser`.
+
+## Настройка отправки MVP
+
+- SMS: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` (или `TWILIO_FROM_NUMBER`).
+- Email: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_TLS`.
+
+Без провайдера сообщения получают статус `unconfigured`. Twilio имеет приоритет над SMTP. Принятие сообщения провайдером не является подтверждением доставки. Настройки FCM, Vonage и SMS расширенного API также находятся в `.env.example`.
 
 ## API
 
@@ -44,6 +73,22 @@ JSON. Авторизация: `Authorization: Token …`.
 
 SOS принимает request_id UUID, необязательные latitude/longitude, location_at, location_accuracy. Один UUID у одного владельца создаёт одну тревогу. Данные другого пользователя не доступны.
 
-## Публичный сервер
+## Проверка
 
-`runserver` предназначен для разработки. Не публиковать его через Cloudflare Tunnel. Для публикации подготовить отдельный сервер с HTTPS, WSGI/ASGI, приватным DJANGO_SECRET_KEY и DJANGO_DEBUG=0, постоянным worker, резервными копиями и ограничением нагрузки. DNS домена `qorgo.service` пока не изменён.
+```sh
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python manage.py check
+.venv/bin/python manage.py makemigrations --check --dry-run
+.venv/bin/python -m pytest
+```
+
+Тесты используют отдельную SQLite-базу в памяти и не требуют работающего Redis. `requirements-lock.txt` фиксирует проверенное окружение, включая зависимости тестов.
+
+## Docker
+
+```sh
+cp .env.example .env
+docker compose up --build
+```
+
+Compose включает PostgreSQL, Redis, HTTP API, ASGI, Celery, Celery Beat, отдельный worker MVP и Nginx. Для контейнеров адреса базы и Redis задаются именами сервисов. Перед публичным запуском задайте приватный `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=False`, разрешённые хосты, HTTPS и резервное копирование. `runserver` предназначен для локальной разработки.

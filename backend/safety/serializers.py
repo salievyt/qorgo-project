@@ -1,7 +1,9 @@
+from drf_spectacular.utils import extend_schema_serializer
 import re
 from rest_framework import serializers
 from .models import Contact, Alert, Delivery, Journey
 
+@extend_schema_serializer(component_name='MobileContact')
 class ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
@@ -16,17 +18,20 @@ class ContactSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Укажите имя.')
         return value.strip()
 
+@extend_schema_serializer(component_name='MobileDelivery')
 class DeliverySerializer(serializers.ModelSerializer):
     class Meta:
         model = Delivery
         fields = ['name', 'status', 'channel', 'attempts']
 
+@extend_schema_serializer(component_name='MobileAlert')
 class AlertSerializer(serializers.ModelSerializer):
     deliveries = DeliverySerializer(many=True, read_only=True)
     class Meta:
         model = Alert
         fields = ['id', 'request_id', 'created_at', 'reason', 'latitude', 'longitude', 'location_accuracy', 'location_at', 'resolved_at', 'deliveries']
 
+@extend_schema_serializer(component_name='MobileAlertInput')
 class AlertInputSerializer(serializers.Serializer):
     request_id = serializers.UUIDField()
     latitude = serializers.FloatField(min_value=-90, max_value=90, allow_null=True, required=False)
@@ -38,6 +43,7 @@ class AlertInputSerializer(serializers.Serializer):
             raise serializers.ValidationError('Both coordinates are required together.')
         return attrs
 
+@extend_schema_serializer(component_name='MobileJourney')
 class JourneySerializer(serializers.ModelSerializer):
     class Meta:
         model = Journey

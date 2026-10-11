@@ -1,0 +1,8 @@
+.venv
+.env
+*.sqlite*
+__pycache__
+.pytest_cache
+media
+staticfiles
+celerybeat-schedule*

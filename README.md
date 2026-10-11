@@ -7,7 +7,7 @@ QORGO — концепция платформы личной, семейной �
 ## Навигация
 
 - [Архитектура мобильного MVP](docs/architecture/Mobile_MVP.md).
-- [Django API](backend/README.md) — аккаунты, контакты, SOS и обработка таймеров.
+- [Django API](backend/README.md) — единый backend: аккаунты, контакты, SOS, семьи, геолокация, таймеры, WebSocket и фоновые задачи.
 
 - [Мобильное приложение Flutter](mobile/README.md) — рабочая основа MVP для Android и iOS.
 
