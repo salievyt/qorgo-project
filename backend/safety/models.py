@@ -1,0 +1,46 @@
+from django.conf import settings
+from django.db import models
+
+class Contact(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=20)
+    email = models.EmailField(blank=True)
+    relationship = models.CharField(max_length=60, blank=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['owner', 'phone'], name='unique_contact_phone')]
+
+class Alert(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    request_id = models.UUIDField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    reason = models.CharField(max_length=20, default='sos')
+    latitude = models.FloatField(null=True)
+    longitude = models.FloatField(null=True)
+    location_at = models.DateTimeField(null=True)
+    location_accuracy = models.FloatField(null=True)
+    resolved_at = models.DateTimeField(null=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['owner', 'request_id'], name='idempotent_alert')]
+
+class Delivery(models.Model):
+    alert = models.ForeignKey(Alert, related_name='deliveries', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=20)
+    email = models.EmailField(blank=True)
+    # "accepted" means provider accepted the request, not recipient received it.
+    status = models.CharField(max_length=24, default='pending')
+    channel = models.CharField(max_length=10, blank=True)
+    provider_id = models.CharField(max_length=100, blank=True)
+    attempts = models.PositiveIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+class Journey(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    destination = models.CharField(max_length=160)
+    deadline = models.DateTimeField()
+    state = models.CharField(max_length=16, default='active')
+    created_at = models.DateTimeField(auto_now_add=True)
+    alert = models.OneToOneField(Alert, null=True, on_delete=models.SET_NULL)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['owner'], condition=models.Q(state='active'), name='one_active_journey')]

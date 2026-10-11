@@ -1,0 +1,23 @@
+import 'entities.dart';
+
+abstract interface class SafetyRepository {
+  Future<bool> restoreSession();
+  Future<void> signIn(String email, String password, {String? name});
+  Future<void> signOut();
+  Future<Snapshot> load();
+  Future<void> saveContact(Contact contact);
+  Future<void> deleteContact(int id);
+  Future<void> saveProfile(String name);
+  Future<SafetyAlert> activateSos(GeoPoint? location);
+  Future<void> resolveAlert(int id);
+  Future<void> retryAlert(int id);
+  Future<void> startJourney(String destination, DateTime deadline);
+  Future<void> finishJourney(int id, {required bool arrived});
+}
+
+abstract interface class DeviceGateway {
+  Future<GeoPoint> locate();
+  Future<void> openMap(GeoPoint point);
+  Future<void> call(String phone);
+  Future<void> composeSms(Contact contact, String message);
+}
