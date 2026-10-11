@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, hydrateRoot } from "react-dom/client";
 import "./styles.css";
 import { Pricing } from "./pricing.jsx";
 function Icon({ name = "arrow", size = 20 }) {
@@ -339,7 +339,7 @@ const faqs = [
     "Это локальная демонстрация. Реальный сигнал не отправляется, геолокация не запрашивается. Неполный свайп возвращает круг в начало.",
   ],
 ];
-function App() {
+export function App() {
   const [menu, setMenu] = useState(false),
     [paused, setPaused] = useState(false);
   return (
@@ -389,7 +389,7 @@ function App() {
               вам дорог.
             </h1>
             <p>
-              QORGO объединяет личную и городскую безопасность. <br />
+              QORGO — проект личной, семейной и городской безопасности в Кыргызстане. <br />
               Один SOS-сигнал — первый шаг к помощи.
             </p>
             <a className="button" href="#features">
@@ -851,4 +851,8 @@ function App() {
     </>
   );
 }
-createRoot(document.getElementById("root")).render(<App />);
+if (typeof document !== "undefined") {
+  const root = document.getElementById("root");
+  if (root.hasChildNodes()) hydrateRoot(root, <App />);
+  else createRoot(root).render(<App />);
+}
