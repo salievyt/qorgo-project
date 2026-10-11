@@ -1919,3 +1919,10 @@ footer > div:nth-child(3) {
 .fake-call-actions { display: flex; gap: 44px; margin-top: 12px; }
 .fake-call-actions span { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; color: white; background: #b03d32; font-size: 24px; }
 .fake-call-actions span:last-child { background: #235d3b; }
+
+.footer-bottom { align-items: center; gap: 20px; flex-wrap: wrap; }
+.deo-credit { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; border: 1px solid #235d3b1a; border-radius: 12px; background: #ffffff70; transition: background 160ms ease, border-color 160ms ease; }
+.deo-credit img { display: block; width: 160px; max-width: 100%; height: auto; filter: brightness(0) saturate(100%) invert(29%) sepia(24%) saturate(1046%) hue-rotate(90deg) brightness(91%) contrast(87%); }
+.deo-credit:hover { background: #fff; border-color: #235d3b60; }
+@media (max-width: 480px) { .deo-credit { order: 3; flex-basis: 100%; justify-content: center; padding: 14px; } .deo-credit img { width: 150px; } }
+@media (prefers-reduced-motion: reduce) { .deo-credit { transition: none; } }
