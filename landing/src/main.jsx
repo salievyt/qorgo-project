@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import "./styles.css";
 import { Pricing } from "./pricing.jsx";
+import { ContentProvider, ContentText, useContent } from "./content.jsx";
 function Icon({ name = "arrow", size = 20 }) {
   const paths = {
     arrow: (
@@ -42,6 +43,7 @@ function Icon({ name = "arrow", size = 20 }) {
   );
 }
 function Slider() {
+  const { t } = useContent();
   const [value, setValue] = useState(0),
     [done, setDone] = useState(false);
   const track = useRef(null),
@@ -63,7 +65,7 @@ function Slider() {
     <div className="slider-demo">
       <div ref={track} className={"sos-track " + (done ? "complete" : "")}>
         <span className="slider-label">
-          {done ? "Жест завершён" : "Потяните вправо"} <span>› › ›</span>
+          {done ? t("main.extra.168") : t("main.extra.169")} <span>› › ›</span>
         </span>
         <button
           className="sos-knob"
@@ -93,18 +95,16 @@ function Slider() {
       <div className="slider-status" aria-live="polite">
         {done ? (
           <>
-            <span>Это демо. Сигнал не отправлен.</span>
+            <span><ContentText name="main.extra.98" /></span>
             <button
               onClick={() => {
                 setDone(false);
                 setValue(0);
               }}
-            >
-              Повторить
-            </button>
+            ><ContentText name="main.extra.99" /></button>
           </>
         ) : (
-          <span>Доведите круг до правого края. Неполный свайп отменяется.</span>
+          <span><ContentText name="main.extra.100" /></span>
         )}
       </div>
     </div>
@@ -163,37 +163,30 @@ function CityMap() {
           strokeWidth="3"
         />
         <g fontFamily="Arial" fontSize="9" fill="#8e9386" letterSpacing="1.5">
-          <text x="41" y="126">
-            ПАРК
-          </text>
-          <text x="413" y="76">
-            УНИВЕРСИТЕТ
-          </text>
-          <text x="464" y="556">
-            ЖИЛОЙ КВАРТАЛ
-          </text>
+          <text x="41" y="126"><ContentText name="main.extra.101" /></text>
+          <text x="413" y="76"><ContentText name="main.extra.102" /></text>
+          <text x="464" y="556"><ContentText name="main.extra.103" /></text>
         </g>
       </svg>
       <div className="map-top">
         <span>
-          <i /> Сценарий реагирования
-        </span>
-        <span>Демонстрация</span>
+          <i /><ContentText name="main.extra.104" /></span>
+        <span><ContentText name="main.extra.105" /></span>
       </div>
       <div className="map-signal">
         <span className="signal-dot" />
         <div>
-          <b>Получен сигнал SOS</b>
-          <small>Местоположение определено</small>
+          <b><ContentText name="main.extra.106" /></b>
+          <small><ContentText name="main.extra.107" /></small>
         </div>
-        <span className="signal-time">сейчас</span>
+        <span className="signal-time"><ContentText name="main.extra.108" /></span>
       </div>
       <div className="map-control">
         <Icon name="shield" />
-        <span>Диспетчерская</span>
+        <span><ContentText name="main.extra.109" /></span>
       </div>
       <div className="map-bottom">
-        <span>Человек → Сигнал → Координация</span>
+        <span><ContentText name="main.extra.110" /></span>
         <Icon name="pin" size={16} />
       </div>
     </div>
@@ -205,23 +198,19 @@ function ProductPreview({ id }) {
       <div className="personal-preview">
         <div className="preview-heading">
           <b>QORGO</b>
-          <span>Концепт приложения</span>
+          <span><ContentText name="main.extra.111" /></span>
         </div>
         <div className="personal-head">
-          <span>Круг безопасности</span>
-          <h3>
-            Быть рядом.
-            <br />
-            Даже на расстоянии.
-          </h3>
+          <span><ContentText name="main.extra.112" /></span>
+          <h3><ContentText name="main.extra.113" /><br /><ContentText name="main.extra.114" /></h3>
         </div>
         <div className="family-row">
-          <span className="avatar">А</span>
-          <span className="avatar">М</span>
-          <span>Ваши доверенные контакты</span>
+          <span className="avatar"><ContentText name="main.extra.115" /></span>
+          <span className="avatar"><ContentText name="main.extra.116" /></span>
+          <span><ContentText name="main.extra.117" /></span>
           <Icon size={16} />
         </div>
-        <div className="try-label">ПОПРОБУЙТЕ ЖЕСТ SOS</div>
+        <div className="try-label"><ContentText name="main.extra.118" /></div>
         <Slider />
       </div>
     );
@@ -240,48 +229,48 @@ function ProductPreview({ id }) {
             •••••••
           </div>
           <div className="physical-sos">SOS</div>
-          <span>ГОЛОСОВАЯ СВЯЗЬ</span>
+          <span><ContentText name="main.extra.119" /></span>
         </div>
         <div className="terminal mini">
           <b>
             QORGO <small>X MINI</small>
           </b>
           <div className="physical-sos">SOS</div>
-          <span>ТРЕВОЖНЫЙ СИГНАЛ</span>
+          <span><ContentText name="main.extra.120" /></span>
         </div>
-        <p>Схематичный концепт. Финальный корпус в разработке.</p>
+        <p><ContentText name="main.extra.121" /></p>
       </div>
     );
   return (
     <div className="control-preview">
       <div className="preview-heading">
         <b>QORGO Control</b>
-        <span>Концепт панели</span>
+        <span><ContentText name="main.extra.122" /></span>
       </div>
       <div className="control-alert">
-        <span className="signal-dot" /> Сигнал SOS <span>Новый</span>
+        <span className="signal-dot" /><ContentText name="main.extra.123" /><span><ContentText name="main.extra.124" /></span>
       </div>
       <dl>
         <div>
-          <dt>Источник</dt>
-          <dd>Терминал X LITE</dd>
+          <dt><ContentText name="main.extra.125" /></dt>
+          <dd><ContentText name="main.extra.126" /></dd>
         </div>
         <div>
-          <dt>Место</dt>
-          <dd>Площадка пилота</dd>
+          <dt><ContentText name="main.extra.127" /></dt>
+          <dd><ContentText name="main.extra.128" /></dd>
         </div>
         <div>
-          <dt>Состояние</dt>
-          <dd>Ожидает обработки</dd>
+          <dt><ContentText name="main.extra.129" /></dt>
+          <dd><ContentText name="main.extra.130" /></dd>
         </div>
       </dl>
       <div className="incident-route">
         <i />
-        <span>Сигнал получен</span>
+        <span><ContentText name="main.extra.131" /></span>
         <i />
-        <span>Координация помощи</span>
+        <span><ContentText name="main.extra.132" /></span>
       </div>
-      <p>Демонстрационные данные</p>
+      <p><ContentText name="main.extra.133" /></p>
     </div>
   );
 }
@@ -300,7 +289,7 @@ function Phone() {
         <img src="/brand/qorgo.svg" alt="QORGO" />
       </div>
       <div className="phone-name">
-        QORGO<span>Ваш круг безопасности</span>
+        QORGO<span><ContentText name="main.extra.134" /></span>
       </div>
       <div className="phone-demo">
         <Slider />
@@ -313,62 +302,34 @@ function Phone() {
     </div>
   );
 }
-const faqs = [
-  [
-    "Как работает QORGO?",
-    "В предполагаемом сценарии полный свайп SOS активирует тревогу. Местоположение и уведомление передаются доверенным контактам, а для городских терминалов — в диспетчерскую платформу.",
-  ],
-  [
-    "Можно ли уже скачать приложение?",
-    "Проект находится на стадии концепции и подготовки требований. На сайте показаны демонстрационные интерфейсы; действующее приложение пока не представлено.",
-  ],
-  [
-    "Кто будет реагировать на SOS?",
-    "В приложении предполагается уведомление доверенных контактов. Для терминалов необходимо согласовать партнёра по диспетчеризации и реагированию на этапе пилота.",
-  ],
-  [
-    "Когда и где планируется пилот?",
-    "Предлагаемая территория — Ош. Даты, площадка и порядок реагирования предстоит согласовать с партнёрами.",
-  ],
-  [
-    "Есть ли сотрудничество с государством?",
-    "Действующие государственные партнёрства и интеграции пока не заявлены. В перспективе QORGO планируется предложить государственным и муниципальным организациям.",
-  ],
-  [
-    "Что происходит при свайпе на сайте?",
-    "Это локальная демонстрация. Реальный сигнал не отправляется, геолокация не запрашивается. Неполный свайп возвращает круг в начало.",
-  ],
-];
-export function App() {
+function Landing() {
+  const { content, t } = useContent();
   const [menu, setMenu] = useState(false),
     [paused, setPaused] = useState(false);
   return (
     <>
-      <a className="skip-link" href="#main">
-        Перейти к содержанию
-      </a>
+      <a className="skip-link" href={content.links["link.1"] ?? "#main"}><ContentText name="main.001" /></a>
       <header>
-        <a className="brand" href="#">
+        <a className="brand" href={content.links["link.2"] ?? "#"}>
           <img src="/brand/qorgo-dark.svg" alt="" />
           <span>qorgo</span>
         </a>
         <nav className={menu ? "open" : ""} aria-label="Основная навигация">
           {[
-            ["#how", "Как работает"],
-            ["#response", "Кто поможет"],
-            ["#features", "Возможности"],
-            ["#pricing", "Тарифы"],
-            ["#pilot", "Пилот"],
+            ["#how", t("cards.001")],
+            ["#response", t("cards.002")],
+            ["#features", t("cards.003")],
+            ["#pricing", t("cards.004")],
+            ["#pilot", t("cards.005")],
             ["#faq", "FAQ"],
           ].map(([href, name]) => (
-            <a href={href} key={href} onClick={() => setMenu(false)}>
+            <a href={content.links[`nav.${href.slice(1)}`] ?? href} key={href} onClick={() => setMenu(false)}>
               {name}
             </a>
           ))}
         </nav>
-        <a href="#partnership" className="button header-cta">
-          <Icon name="down" size={16} /> О проекте
-        </a>
+        <a href={content.links["link.3"] ?? "#partnership"} className="button header-cta">
+          <Icon name="down" size={16} /><ContentText name="main.extra.135" /></a>
         <button
           className="menu-toggle"
           onClick={() => setMenu(!menu)}
@@ -381,19 +342,9 @@ export function App() {
       <main id="main">
         <section className="hero">
           <div className="hero-copy">
-            <h1>
-              Будьте спокойнее
-              <br />
-              за тех, кто
-              <br />
-              вам дорог.
-            </h1>
-            <p>
-              QORGO — проект личной, семейной и городской безопасности в Кыргызстане. <br />
-              Один SOS-сигнал — первый шаг к помощи.
-            </p>
-            <a className="button" href="#features">
-              Познакомиться с QORGO <Icon />
+            <h1><ContentText name="main.002" /></h1>
+            <p><ContentText name="main.003" /></p>
+            <a className="button" href={content.links["link.4"] ?? "#features"}><ContentText name="main.extra.136" /><Icon />
             </a>
           </div>
           <div className="floating-note note-one">
@@ -401,8 +352,8 @@ export function App() {
               <Icon name="shield" />
             </span>
             <div>
-              <b>Круг безопасности</b>
-              <small>Близкие получают уведомление</small>
+              <b><ContentText name="main.004" /></b>
+              <small><ContentText name="main.005" /></small>
             </div>
           </div>
           <div className="floating-note note-two">
@@ -410,54 +361,40 @@ export function App() {
               <Icon name="pin" />
             </span>
             <div>
-              <b>Сигнал SOS</b>
-              <small>Местоположение передано</small>
+              <b><ContentText name="main.006" /></b>
+              <small><ContentText name="main.007" /></small>
             </div>
           </div>
           <Phone />
           <div className="hero-facts">
             <div>
               <b>1</b>
-              <span>
-                полный свайп
-                <br />
-                для активации SOS
-              </span>
+              <span><ContentText name="main.008" /></span>
             </div>
             <div>
               <b>3</b>
-              <span>
-                направления:
-                <br />
-                Personal, X и Control
-              </span>
+              <span><ContentText name="main.009" /></span>
             </div>
             <div>
-              <b>Ош</b>
-              <span>
-                предлагаемый город
-                <br />
-                пилотного проекта
-              </span>
+              <b><ContentText name="main.010" /></b>
+              <span><ContentText name="main.011" /></span>
             </div>
           </div>
-          <span className="hero-disclaimer">
-            Концепция проекта · Демонстрация интерфейса
-          </span>
+          <span className="hero-disclaimer"><ContentText name="main.012" /></span>
         </section>
         <section className="situations">
-          <h2>Когда особенно важна связь?</h2>
+          <h2><ContentText name="main.013" /></h2>
           <div className={"ticker " + (paused ? "paused" : "")}>
             <div>
               {[...Array(2)].map((_, i) => (
                 <div className="ticker-copy" key={i} aria-hidden={i === 1}>
                   {[
-                    "Возвращение домой вечером",
-                    "Незнакомое место",
-                    "Ребёнок задержался",
-                    "Человек потерялся",
-                    "Нужна помощь на улице",
-                    "Нет возможности позвонить",
+                    t("cards.006"),
+                    t("cards.007"),
+                    t("cards.008"),
+                    t("cards.009"),
+                    t("cards.010"),
+                    t("cards.011"),
                   ].map((t) => (
                     <span key={t}>{t}</span>
                   ))}
@@ -470,32 +407,28 @@ export function App() {
             onClick={() => setPaused(!paused)}
             aria-pressed={paused}
           >
-            {paused ? "Продолжить движение" : "Приостановить движение"}
+            {paused ? t("main.extra.170") : t("main.extra.171")}
           </button>
         </section>
         <section className="current">
-          <h2>
-            Почему одной связи
-            <br />
-            бывает недостаточно?
-          </h2>
+          <h2><ContentText name="main.014" /></h2>
           <div className="current-grid">
             {[
               [
-                "Позвонить близким",
-                "Не всегда получается объяснить, что произошло и где вы находитесь.",
+                t("cards.012"),
+                t("cards.013"),
               ],
               [
-                "Отправить сообщение",
-                "В тревожной ситуации трудно набирать текст и ждать ответа.",
+                t("cards.014"),
+                t("cards.015"),
               ],
               [
-                "Поделиться точкой",
-                "Местоположение полезно, но важно, чтобы нужные люди получили и сам сигнал.",
+                t("cards.016"),
+                t("cards.017"),
               ],
               [
-                "Попросить помощи рядом",
-                "На улице не всегда есть человек, к которому можно обратиться.",
+                t("cards.018"),
+                t("cards.019"),
               ],
             ].map(([h, p], i) => (
               <article key={h}>
@@ -507,18 +440,10 @@ export function App() {
           </div>
         </section>
         <section className="solution">
-          <span className="section-label">НАША КОНЦЕПЦИЯ</span>
-          <h2>
-            QORGO — безопасность
-            <br />
-            человека, семьи и города.
-          </h2>
-          <p>
-            Приложение для близких, SOS-терминалы для общественных мест
-            <br />и платформа координации помощи — в одной экосистеме.
-          </p>
-          <a href="#how" className="button">
-            Как это устроено <Icon />
+          <span className="section-label"><ContentText name="main.015" /></span>
+          <h2><ContentText name="main.016" /></h2>
+          <p><ContentText name="main.017" /></p>
+          <a href={content.links["link.5"] ?? "#how"} className="button"><ContentText name="main.extra.137" /><Icon />
           </a>
           <div className="solution-line">
             <span>Personal</span>
@@ -529,27 +454,27 @@ export function App() {
           </div>
         </section>
         <section className="how" id="how">
-          <h2>Как работает?</h2>
+          <h2><ContentText name="main.018" /></h2>
           <div className="how-grid">
             {[
               [
-                "Полный свайп SOS",
-                "Проведите ползунок до правого края. Неполное движение отменяет активацию.",
+                t("cards.020"),
+                t("cards.021"),
                 "shield",
               ],
               [
-                "Передача информации",
-                "Сигнал содержит местоположение, чтобы получатели понимали, где нужна помощь.",
+                t("cards.022"),
+                t("cards.023"),
                 "pin",
               ],
               [
-                "Уведомление близких",
-                "Выбранные доверенные контакты получают тревожное уведомление.",
+                t("cards.024"),
+                t("cards.025"),
                 "arrow",
               ],
               [
-                "Координация ответа",
-                "Для терминалов сигнал предполагается передавать в QORGO Control.",
+                t("cards.026"),
+                t("cards.027"),
                 "shield",
               ],
             ].map(([h, p, icon], i) => (
@@ -563,23 +488,13 @@ export function App() {
               </article>
             ))}
           </div>
-          <p className="section-note">
-            Предполагаемый сценарий. Порядок реагирования уточняется при
-            подготовке пилота.
-          </p>
+          <p className="section-note"><ContentText name="main.019" /></p>
         </section>
         <section className="response" id="response">
-          <h2>Кто поможет?</h2>
+          <h2><ContentText name="main.020" /></h2>
           <div className="response-head">
-            <h3>
-              Личная связь с близкими.
-              <br />
-              Городская — с партнёрами.
-            </h3>
-            <p>
-              QORGO проектируется как связующее звено.
-              <br />У каждого сценария — свой круг получателей.
-            </p>
+            <h3><ContentText name="main.021" /></h3>
+            <p><ContentText name="main.022" /></p>
           </div>
           <div className="response-grid">
             <div className="response-visual">
@@ -588,20 +503,20 @@ export function App() {
             <div className="response-items">
               {[
                 [
-                  "Доверенные контакты",
-                  "Люди, которых пользователь выбирает сам: семья, друзья и близкие.",
+                  t("cards.028"),
+                  t("cards.029"),
                 ],
                 [
-                  "Партнёр по реагированию",
-                  "Для городского пилота необходима организация, принимающая и обрабатывающая SOS-сигналы.",
+                  t("cards.030"),
+                  t("cards.031"),
                 ],
                 [
-                  "Диспетчерская платформа",
-                  "Control предполагает карту событий и управление инцидентами.",
+                  t("cards.032"),
+                  t("cards.033"),
                 ],
                 [
-                  "Проверка на практике",
-                  "Скорость ответа и надёжность нужно измерить в ходе пилота.",
+                  t("cards.034"),
+                  t("cards.035"),
                 ],
               ].map(([h, p]) => (
                 <article key={h}>
@@ -616,18 +531,15 @@ export function App() {
           </div>
         </section>
         <section className="features" id="features">
-          <h2>Возможности</h2>
+          <h2><ContentText name="main.023" /></h2>
           <div className="features-grid">
             <article className="feature-card sos-feature">
               <div>
                 <span className="black-icon">
                   <Icon name="shield" />
                 </span>
-                <h3>Кнопка SOS</h3>
-                <p>
-                  Полный свайп передаёт сигнал SOS, координаты и данные профиля
-                  для вызова охраны в зоне обслуживания.
-                </p>
+                <h3><ContentText name="main.024" /></h3>
+                <p><ContentText name="main.025" /></p>
               </div>
               <div className="feature-visual sos-visual">
                 <div className="demo-rings">
@@ -646,15 +558,8 @@ export function App() {
                 <span className="black-icon">
                   <Icon name="pin" />
                 </span>
-                <h3>
-                  Локация
-                  <br />
-                  близких
-                </h3>
-                <p>
-                  Местоположение близких в реальном времени — с их согласия,
-                  чтобы знать, где они находятся.
-                </p>
+                <h3><ContentText name="main.026" /></h3>
+                <p><ContentText name="main.027" /></p>
               </div>
               <div className="feature-visual location-visual">
                 <div className="route-line" />
@@ -669,23 +574,17 @@ export function App() {
                 <span className="black-icon">
                   <Icon name="shield" />
                 </span>
-                <h3>
-                  Мониторинг
-                  <br />близких
-                </h3>
-                <p>
-                  Уведомления, когда близкий приходит в выбранное место
-                  или покидает его: домой, в школу или на работу.
-                </p>
+                <h3><ContentText name="main.028" /></h3>
+                <p><ContentText name="main.029" /></p>
               </div>
               <div className="feature-visual monitoring-visual">
                 <div className="arrival">
                   <span>✓</span>
-                  <b>Прибытие домой</b>
-                  <small>Пример уведомления</small>
+                  <b><ContentText name="main.030" /></b>
+                  <small><ContentText name="main.031" /></small>
                 </div>
                 <span className="timer">
-                  18:30<small>Время прибытия</small>
+                  18:30<small><ContentText name="main.extra.138" /></small>
                 </span>
               </div>
             </article>
@@ -697,70 +596,45 @@ export function App() {
                 <h3>
                   Fake Call
                 </h3>
-                <p>
-                  Виртуальный входящий звонок — повод завершить неприятную
-                  встречу или выйти из неловкой ситуации.
-                </p>
+                <p><ContentText name="main.extra.139" /></p>
               </div>
               <div className="feature-visual fake-call-visual" aria-hidden="true">
-                <span className="fake-call-avatar">М</span>
-                <b>Мама</b>
-                <span>Входящий звонок · демонстрация</span>
+                <span className="fake-call-avatar"><ContentText name="main.extra.140" /></span>
+                <b><ContentText name="main.extra.141" /></b>
+                <span><ContentText name="main.extra.142" /></span>
                 <div className="fake-call-actions"><span>✕</span><span>☎</span></div>
               </div>
             </article>
           </div>
-          <p className="section-note">
-            Эти четыре функции входят в утверждённый состав QORGO и готовятся к запуску.
-            Вызов охраны будет доступен в тарифе с реагированием после подключения партнёра.
-            Целевое время прибытия — 3–7 минут; фактические сроки и зона покрытия будут подтверждены в пилоте.
-          </p>
+          <p className="section-note"><ContentText name="main.extra.143" /></p>
         </section>
         <Pricing />
         <section className="pilot" id="pilot">
-          <h2>Начнём с пилота в Оше</h2>
-          <p className="section-subtitle">
-            Сначала проверить сценарий на ограниченной площадке.
-            <br />
-            Затем принимать решение о масштабировании.
-          </p>
+          <h2><ContentText name="main.extra.144" /></h2>
+          <p className="section-subtitle"><ContentText name="main.extra.145" /><br /><ContentText name="main.extra.146" /></p>
           <div className="pilot-grid">
             <article>
-              <span className="pill">Подготовка</span>
-              <h3>
-                Площадка
-                <br />и партнёр
-              </h3>
-              <p>
-                Согласовать территорию, места установки и порядок приёма
-                тревожных сигналов.
-              </p>
+              <span className="pill"><ContentText name="main.extra.147" /></span>
+              <h3><ContentText name="main.extra.148" /><br /><ContentText name="main.extra.149" /></h3>
+              <p><ContentText name="main.extra.150" /></p>
               <ul>
-                <li>Площадка внедрения</li>
-                <li>Партнёр по реагированию</li>
-                <li>Критерии оценки</li>
+                <li><ContentText name="main.extra.151" /></li>
+                <li><ContentText name="main.extra.152" /></li>
+                <li><ContentText name="main.extra.153" /></li>
               </ul>
-              <a href="#partnership" className="button">
-                О программе пилота <Icon />
+              <a href={content.links["link.6"] ?? "#partnership"} className="button"><ContentText name="main.extra.154" /><Icon />
               </a>
             </article>
             <article>
-              <span className="pill">Испытания</span>
-              <h3>
-                Прототипы
-                <br />и сценарии
-              </h3>
-              <p>
-                Проверить полный путь тревоги, связь, питание и работу с ложными
-                активациями.
-              </p>
+              <span className="pill"><ContentText name="main.extra.155" /></span>
+              <h3><ContentText name="main.extra.156" /><br /><ContentText name="main.extra.157" /></h3>
+              <p><ContentText name="main.extra.158" /></p>
               <ul>
-                <li>Устройства LITE и MINI</li>
-                <li>Доставка SOS-сигнала</li>
-                <li>Результаты испытаний</li>
+                <li><ContentText name="main.extra.159" /></li>
+                <li><ContentText name="main.extra.160" /></li>
+                <li><ContentText name="main.extra.161" /></li>
               </ul>
-              <a href="/QORGO_Presentation.pptx" download className="button">
-                Скачать презентацию <Icon name="down" />
+              <a href={content.presentation_url} download className="button"><ContentText name="main.extra.162" /><Icon name="down" />
               </a>
             </article>
           </div>
@@ -772,27 +646,19 @@ export function App() {
             <div className="family-symbol">
               <Icon name="shield" size={80} />
             </div>
-            <span>Человек · Семья · Город</span>
+            <span><ContentText name="main.032" /></span>
           </div>
           <div>
-            <h2>
-              Технологии безопасности
-              <br />
-              начинаются с людей.
-            </h2>
-            <p>
-              Мы готовим концепцию QORGO для обсуждения с площадками,
-              муниципалитетами и партнёрами по безопасности.
-            </p>
-            <a href="#partnership" className="button">
-              Узнать о проекте <Icon />
+            <h2><ContentText name="main.033" /></h2>
+            <p><ContentText name="main.034" /></p>
+            <a href={content.links["link.7"] ?? "#partnership"} className="button"><ContentText name="main.extra.163" /><Icon />
             </a>
           </div>
         </section>
         <section className="faq" id="faq">
-          <h2>Частые вопросы</h2>
+          <h2><ContentText name="main.035" /></h2>
           <div className="faq-list">
-            {faqs.map(([q, a], i) => (
+            {content.faqs.map(([q, a], i) => (
               <details key={q}>
                 <summary>
                   <span className="faq-num">0{i + 1}</span>
@@ -805,52 +671,57 @@ export function App() {
           </div>
         </section>
         <section className="contact" id="partnership">
-          <h2>
-            Начнём разговор
-            <br />о безопасности.
-          </h2>
-          <p>
-            Презентация QORGO и предложенного пилота —<br />
-            для потенциальных партнёров проекта.
-          </p>
+          <h2><ContentText name="main.036" /></h2>
+          <p><ContentText name="main.037" /></p>
           <a
             className="button white-button"
-            href="/QORGO_Presentation.pptx"
+            href={content.presentation_url}
             download
           >
-            <Icon name="down" /> Скачать презентацию QORGO
-          </a>
+            <Icon name="down" /><ContentText name="main.extra.164" /></a>
         </section>
       </main>
+      {content.documents.length > 0 && <section className="faq" id="documents">
+        <h2><ContentText name="main.documents" /></h2>
+        <div className="faq-list">{content.documents.map(document => <details key={document.slug} id={document.slug}>
+          <summary>{document.title}</summary><p style={{ whiteSpace: "pre-wrap" }}>{document.body}</p>
+        </details>)}</div>
+      </section>}
       <footer>
         <div>
-          <a className="brand" href="#">
+          <a className="brand" href={content.links["link.8"] ?? "#"}>
             <img src="/brand/qorgo-dark.svg" alt="" />
             <span>qorgo</span>
           </a>
-          <p>Проект DEO-CORE</p>
+          <p><ContentText name="main.038" /></p>
         </div>
         <div>
-          <b>Личная и городская безопасность</b>
-          <p>
-            Концепция и подготовка требований.
-            <br />
-            Государственные партнёрства пока не заявлены.
-          </p>
+          <b><ContentText name="main.039" /></b>
+          <p><ContentText name="main.040" /></p>
         </div>
         <div>
-          <a href="#features">Возможности</a>
-          <a href="#pilot">Пилотный проект</a>
-          <a href="#faq">Частые вопросы</a>
+          <a href={content.links["link.9"] ?? "#features"}><ContentText name="main.041" /></a>
+          <a href={content.links["link.10"] ?? "#pilot"}><ContentText name="main.042" /></a>
+          <a href={content.links["link.11"] ?? "#faq"}><ContentText name="main.043" /></a>
         </div>
         <div className="footer-bottom">
           <span>© 2026 QORGO</span>
-          <a href="#">Наверх ↑</a>
+          <a
+            className="deo-credit"
+            href="https://crm.deo-core.codes/ref/kj_fQUTwe6qMla9_"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Made by DEO — открыть сайт DEO в новой вкладке"
+          >
+            <img src="/brand/made-by-deo.png" alt="Made by DEO" width="632" height="128" loading="lazy" />
+          </a>
+          <a href={content.links["link.12"] ?? "#"}><ContentText name="main.044" /></a>
         </div>
       </footer>
     </>
   );
 }
+export function App() { return <ContentProvider><Landing /></ContentProvider>; }
 if (typeof document !== "undefined") {
   const root = document.getElementById("root");
   if (root.hasChildNodes()) hydrateRoot(root, <App />);

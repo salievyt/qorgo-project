@@ -18,6 +18,7 @@ urlpatterns = [
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
     # Qorgo API v1
+    path(api_prefix, include('content.urls')),
     path(api_prefix, include('accounts.urls')),
     path(api_prefix, include('families.urls')),
     path(api_prefix, include('sos.urls')),

@@ -11,6 +11,8 @@ def main():
         os.environ['DATABASE_URL'] = direct_url
     import django
     django.setup()
+    # Reject model changes whose migration files were not committed.
+    call_command('makemigrations', check=True, dry_run=True, interactive=False)
     call_command('migrate', interactive=False)
     if os.getenv('VERCEL_ENV') == 'production' and os.getenv('BOOTSTRAP_ADMIN_PASSWORD'):
         call_command('bootstrap_admin')

@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'channels',
 
     # Qorgo apps
+    'content',
     'accounts',
     'families',
     'sos',
