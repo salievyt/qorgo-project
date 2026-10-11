@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -13,9 +14,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('DJANGO_SECRET_KEY', default='dev-secret-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DJANGO_DEBUG', default=True, cast=bool)
+DEBUG = config('DJANGO_DEBUG', default=not bool(os.getenv('VERCEL')), cast=bool)
 
-ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,10.0.2.2').split(',')
+ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,10.0.2.2,api.qorgo.services,qorgo-project-backend.vercel.app').split(',')
+for variable in ('VERCEL_URL', 'VERCEL_PROJECT_PRODUCTION_URL'):
+    if os.getenv(variable):
+        ALLOWED_HOSTS.append(os.environ[variable])
+CSRF_TRUSTED_ORIGINS = config('DJANGO_CSRF_TRUSTED_ORIGINS', default='https://api.qorgo.services,https://qorgo-project-backend.vercel.app').split(',')
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 # Application definition
 INSTALLED_APPS = [
@@ -97,6 +105,14 @@ DATABASES = {
         'PORT': config('DB_PORT', default='5432'),
     }
 }
+
+DATABASE_URL = config('DATABASE_URL', default=config('POSTGRES_URL', default=''))
+if DATABASE_URL:
+    DATABASES['default'] = dj_database_url.parse(DATABASE_URL, conn_max_age=0, conn_health_checks=True)
+    if not DEBUG and DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
+        DATABASES['default'].setdefault('OPTIONS', {}).setdefault('sslmode', 'require')
+if os.getenv('VERCEL') and not DATABASE_URL:
+    raise RuntimeError('Set DATABASE_URL to a PostgreSQL database before deploying on Vercel.')
 
 if DATABASES['default']['ENGINE'] == 'django.db.backends.sqlite3':
     DATABASES['default'] = {
@@ -275,7 +291,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 # Email login keeps the existing Flutter API compatible with the shared user model.
-AUTHENTICATION_BACKENDS = ['accounts.backends.EmailBackend', 'django.contrib.auth.backends.ModelBackend']
+AUTHENTICATION_BACKENDS = ['accounts.backends.UsernameBackend', 'accounts.backends.EmailBackend', 'django.contrib.auth.backends.ModelBackend']
 TWILIO_FROM = config('TWILIO_FROM', default=TWILIO_FROM_NUMBER or '')
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('SMTP_HOST', default='')

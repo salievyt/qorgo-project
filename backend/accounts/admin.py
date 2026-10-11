@@ -1,6 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User, EmergencyContact, PrivacySettings, DeviceInfo
+from .forms import QorgoAdminAuthenticationForm
+
+admin.site.login_form = QorgoAdminAuthenticationForm
 
 
 class EmergencyContactInline(admin.TabularInline):
@@ -11,14 +14,14 @@ class EmergencyContactInline(admin.TabularInline):
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ('phone_number', 'email', 'first_name', 'last_name', 'role', 'is_premium', 'is_active', 'last_active_at')
+    list_display = ('username', 'phone_number', 'email', 'first_name', 'last_name', 'role', 'is_premium', 'is_active', 'last_active_at')
     list_filter = ('role', 'is_premium', 'gender', 'city', 'is_active', 'date_joined')
-    search_fields = ('phone_number', 'email', 'first_name', 'last_name')
+    search_fields = ('username', 'phone_number', 'email', 'first_name', 'last_name')
     ordering = ('-date_joined',)
     inlines = [EmergencyContactInline]
 
     fieldsets = (
-        (None, {'fields': ('phone_number', 'password')}),
+        (None, {'fields': ('username', 'phone_number', 'password')}),
         ('Personal Info', {
             'fields': (
                 'email', 'first_name', 'last_name', 'photo',
@@ -34,7 +37,7 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('phone_number', 'email', 'first_name', 'last_name', 'password1', 'password2'),
+            'fields': ('username', 'phone_number', 'email', 'first_name', 'last_name', 'password1', 'password2'),
         }),
     )
 

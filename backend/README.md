@@ -92,3 +92,21 @@ docker compose up --build
 ```
 
 Compose включает PostgreSQL, Redis, HTTP API, ASGI, Celery, Celery Beat, отдельный worker MVP и Nginx. Для контейнеров адреса базы и Redis задаются именами сервисов. Перед публичным запуском задайте приватный `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=False`, разрешённые хосты, HTTPS и резервное копирование. `runserver` предназначен для локальной разработки.
+
+## Vercel и PostgreSQL
+
+Проект Vercel: `qorgo-project-backend`, корневая папка `backend/`. Основной адрес: `https://api.qorgo.services`. `vercel.json` выбирает Django и запускает `build.py` перед публикацией; точка входа определяется через `manage.py` и настройки проекта. Vercel собирает статические ресурсы Swagger и Jazzmin автоматически.
+
+Для production задайте в Vercel:
+
+- `DATABASE_URL` — строка подключения PostgreSQL от Neon; при наличии `DATABASE_URL_UNPOOLED` миграции используют прямое подключение.
+- `DJANGO_SECRET_KEY` — приватный случайный ключ.
+- `DJANGO_DEBUG=False`.
+- `DJANGO_ALLOWED_HOSTS=api.qorgo.services,qorgo-project-backend.vercel.app`.
+- `DJANGO_CSRF_TRUSTED_ORIGINS=https://api.qorgo.services,https://qorgo-project-backend.vercel.app`.
+
+В Vercel SQLite запрещена: без `DATABASE_URL` приложение не запустится. `build.py` применяет миграции до публикации. Мобильные аккаунты продолжают входить по телефону/email; администраторы дополнительно могут иметь уникальный `username` и входить с ним на `/admin/`.
+
+Для первоначального администратора задайте `BOOTSTRAP_ADMIN_USERNAME`, `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD` как production-секреты. После успешного создания удалите эти переменные. Команда `.venv/bin/python manage.py bootstrap_admin` создаёт аккаунт один раз и не сбрасывает существующий пароль или права другого пользователя. Пароли и строки подключения не включаются в исходники.
+
+HTTP API и админ-панель развёртываются на Vercel. Постоянные процессы `process_safety`, Celery Worker/Beat должны работать на отдельном сервере; публикация HTTP API сама по себе не запускает их. Локальные медиафайлы также требуют постоянного внешнего хранилища для production.

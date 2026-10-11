@@ -138,7 +138,8 @@ class User(AbstractUser):
     )
 
     # Required fields
-    username = None  # We use phone_number as the unique identifier
+    # Optional login for administrators; mobile accounts still identify by phone.
+    username = models.CharField(max_length=150, unique=True, null=True, blank=True)
     USERNAME_FIELD = 'phone_number'
     REQUIRED_FIELDS = ['email', 'first_name', 'last_name']
 

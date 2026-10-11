@@ -38,3 +38,7 @@ Thumbs.db
 
 celerybeat-schedule*
 .pytest_cache/
+
+.vercel/
+.vercel
+.env*
