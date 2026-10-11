@@ -113,61 +113,13 @@ function Slider() {
 function CityMap() {
   return (
     <div className="city-map">
-      <svg className="map-svg" viewBox="0 0 660 600" aria-hidden="true">
-        <rect width="660" height="600" fill="#e8e5dc" />
-        <g fill="#d7d9c9">
-          <path d="M0 70h148v125H0zM382 0h190v128H382zM445 390h215v210H445zM0 420h120v180H0z" />
-        </g>
-        <g fill="#dfddd4" stroke="#cccac0" strokeWidth="1">
-          <path d="M182 32h127v90H182zM182 156h130v97H182zM345 167h137v102H345zM24 240h124v118H24zM184 287h130v116H184zM355 305h151v73H355zM185 440h119v135H185zM348 429h61v170H348zM550 171h111v184H550z" />
-        </g>
-        <path
-          d="M-25 390C125 360 218 250 327 310S498 485 705 410"
-          stroke="#bbcec6"
-          strokeWidth="36"
-          fill="none"
-        />
-        <g stroke="#faf8f1" fill="none">
-          <path
-            d="M164-40v700M326-40v700M523-40v700M-30 142h750M-30 273h750M-30 418h750"
-            strokeWidth="17"
-          />
-          <path
-            d="M-10 62h750M-10 215h750M-10 520h750M74-10v650M423-10v650M607-10v650"
-            strokeWidth="6"
-          />
-        </g>
-        <path
-          d="m189 324 137-50 90-82 107-48"
-          fill="none"
-          stroke="#b03d32"
-          strokeWidth="2.5"
-          strokeDasharray="6 5"
-        />
-        <circle cx="189" cy="324" r="54" fill="#b03d3212" />
-        <circle cx="189" cy="324" r="30" fill="#b03d321c" />
-        <circle
-          cx="189"
-          cy="324"
-          r="8"
-          fill="#b03d32"
-          stroke="#fff"
-          strokeWidth="4"
-        />
-        <circle
-          cx="523"
-          cy="144"
-          r="6"
-          fill="#333f35"
-          stroke="#fff"
-          strokeWidth="3"
-        />
-        <g fontFamily="Arial" fontSize="9" fill="#8e9386" letterSpacing="1.5">
-          <text x="41" y="126"><ContentText name="main.extra.101" /></text>
-          <text x="413" y="76"><ContentText name="main.extra.102" /></text>
-          <text x="464" y="556"><ContentText name="main.extra.103" /></text>
-        </g>
-      </svg>
+      <iframe
+        className="map-svg osm-map"
+        title="OpenStreetMap: демонстрационная точка в Оше"
+        src="https://www.openstreetmap.org/export/embed.html?bbox=72.797%2C40.504%2C72.835%2C40.527&layer=mapnik&marker=40.5133%2C72.8161"
+        loading="lazy"
+        referrerPolicy="strict-origin-when-cross-origin"
+      />
       <div className="map-top">
         <span>
           <i /><ContentText name="main.extra.104" /></span>

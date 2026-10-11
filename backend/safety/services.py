@@ -9,6 +9,7 @@ from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
 from .models import Alert, Contact, Delivery, Journey
+from common.services import generate_map_link
 
 @transaction.atomic
 def create_alert(owner, request_id, reason='sos', **location):
@@ -51,7 +52,7 @@ def alert_message(alert):
     if alert.reason == 'timer':
         text += ' Прибытие не подтверждено вовремя.'
     if alert.latitude is not None:
-        text += f' https://www.google.com/maps?q={alert.latitude},{alert.longitude}'
+        text += ' ' + generate_map_link(alert.latitude, alert.longitude)
         text += f' (геопозиция: {alert.location_at}, точность ±{alert.location_accuracy} м)'
     else:
         text += ' Геопозиция недоступна.'

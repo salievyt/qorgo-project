@@ -17,8 +17,8 @@ def generate_invite_code() -> str:
 
 
 def generate_map_link(latitude: float, longitude: float) -> str:
-    """Generate a Google Maps link from coordinates."""
-    return f'https://www.google.com/maps?q={latitude},{longitude}'
+    """Generate an OpenStreetMap link with a marker at the coordinates."""
+    return f'https://www.openstreetmap.org/?mlat={latitude}&mlon={longitude}#map=16/{latitude}/{longitude}'
 
 
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:

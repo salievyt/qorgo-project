@@ -1926,3 +1926,11 @@ footer > div:nth-child(3) {
 .deo-credit:hover { background: #fff; border-color: #235d3b60; }
 @media (max-width: 480px) { .deo-credit { order: 3; flex-basis: 100%; justify-content: center; padding: 14px; } .deo-credit img { width: 150px; } }
 @media (prefers-reduced-motion: reduce) { .deo-credit { transition: none; } }
+
+/* Keep the real map and its attribution reachable beneath the demo labels. */
+.osm-map { border: 0; }
+.city-map:has(.osm-map) .map-top,
+.city-map:has(.osm-map) .map-signal,
+.city-map:has(.osm-map) .map-control,
+.city-map:has(.osm-map) .map-bottom { pointer-events: none; }
+.city-map:has(.osm-map) .map-bottom { bottom: 42px; }

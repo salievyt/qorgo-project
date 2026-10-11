@@ -44,15 +44,15 @@ class TestGenerateInviteCode:
 
 
 class TestGenerateMapLink:
-    """Test Google Maps link generation."""
+    """Test OpenStreetMap link generation."""
 
     def test_valid_coordinates(self):
         link = generate_map_link(42.8746, 74.5698)
-        assert link == 'https://www.google.com/maps?q=42.8746,74.5698'
+        assert link == 'https://www.openstreetmap.org/?mlat=42.8746&mlon=74.5698#map=16/42.8746/74.5698'
 
     def test_negative_coordinates(self):
         link = generate_map_link(-1.0, -1.0)
-        assert 'google.com/maps' in link
+        assert 'openstreetmap.org' in link
         assert '-1.0' in link
 
 
