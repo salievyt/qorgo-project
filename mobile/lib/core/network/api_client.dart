@@ -7,7 +7,7 @@ import '../../domain/entities.dart';
 class ApiClient {
   ApiClient(this.baseUrl, {http.Client? client})
       : client = client ?? http.Client() {
-    if (kReleaseMode && Uri.parse(baseсUrl).scheme != 'https') {
+    if (kReleaseMode && Uri.parse(baseUrl).scheme != 'https') {
       throw const QorgoException('Для сервера требуется HTTPS.');
     }
   }
