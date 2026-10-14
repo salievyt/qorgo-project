@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:qorgo/presentation/app_controller.dart';
-import 'package:qorgo/presentation/app_shell.dart';
+import 'package:qorgo/feature/app/app_view_model.dart';
+import 'package:qorgo/feature/app/app_view.dart';
 import 'support/fakes.dart';
 
 void main() {
@@ -12,7 +12,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final repository = FakeRepository();
-    final controller = AppController(repository, FakeDevice());
+    final controller = AppViewModel(repository, FakeDevice());
     await controller.initialize();
     await tester.pumpWidget(QorgoApp(controller: controller));
     expect(find.text('Нужна помощь?'), findsOneWidget);
@@ -36,7 +36,7 @@ void main() {
   testWidgets('New installation presents real account registration',
       (tester) async {
     final repository = FakeRepository()..authenticated = false;
-    final controller = AppController(repository, FakeDevice());
+    final controller = AppViewModel(repository, FakeDevice());
     await controller.initialize();
     await tester.pumpWidget(QorgoApp(controller: controller));
     expect(find.text('Создать аккаунт'), findsOneWidget);

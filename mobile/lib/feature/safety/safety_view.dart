@@ -1,56 +1,27 @@
+import '../../core/design/qorgo_brand.dart';
+import '../../core/design/qorgo_theme.dart';
 import 'package:flutter/material.dart';
-import '../domain/entities.dart';
-import '../widgets/sos_slider.dart';
-import 'app_controller.dart';
-import 'auth_screen.dart';
+import '../../domain/entities.dart';
+import '../../core/widgets/sos_slider.dart';
+import '../app/app_view_model.dart';
 import 'forms.dart';
-import 'tariffs_screen.dart';
+import '../maps/map_view.dart';
 
 String timeLabel(DateTime value) {
   final v = value.toLocal();
   return '${v.day.toString().padLeft(2, '0')}.${v.month.toString().padLeft(2, '0')} ${v.hour.toString().padLeft(2, '0')}:${v.minute.toString().padLeft(2, '0')}';
 }
 
-class QorgoApp extends StatelessWidget {
-  const QorgoApp({super.key, required this.controller});
-  final AppController controller;
+class SafetyView extends StatefulWidget {
+  const SafetyView({super.key, required this.controller});
+  final AppViewModel controller;
   @override
-  Widget build(BuildContext context) => MaterialApp(
-        title: 'QORGO',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF176B54)),
-          scaffoldBackgroundColor: const Color(0xFFF5F7F5),
-          inputDecorationTheme:
-              const InputDecorationTheme(border: OutlineInputBorder()),
-          filledButtonTheme: FilledButtonThemeData(
-              style: FilledButton.styleFrom(minimumSize: const Size(0, 48))),
-        ),
-        home: ListenableBuilder(
-            listenable: controller,
-            builder: (context, _) {
-              if (!controller.initialized) {
-                return const Scaffold(
-                    body: Center(child: CircularProgressIndicator()));
-              }
-              return controller.signedIn
-                  ? AppShell(controller: controller)
-                  : AuthScreen(controller: controller);
-            }),
-      );
+  State<SafetyView> createState() => _SafetyViewState();
 }
 
-class AppShell extends StatefulWidget {
-  const AppShell({super.key, required this.controller});
-  final AppController controller;
-  @override
-  State<AppShell> createState() => _AppShellState();
-}
-
-class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
+class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
   int _tab = 0;
-  AppController get c => widget.controller;
+  AppViewModel get c => widget.controller;
   @override
   void initState() {
     super.initState();
@@ -75,19 +46,24 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Widget _heading(String text) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Text(text,
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)));
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)));
+  void _showMap(GeoPoint point, String title) {
+    Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => OpenStreetMapView(point: point, title: title)));
+  }
+
   Widget _home(Snapshot data) {
-    final alert = c.activeAlert, journey = c.activeJourney;
+    final alert = c.activeAlert;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Text(
           data.profile.name.isEmpty
               ? 'Вы под защитой близких'
               : 'Здравствуйте, ${data.profile.name}',
-          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600)),
       const SizedBox(height: 12),
       _card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          const Icon(Icons.people_outline, color: Color(0xFF176B54)),
+          const Icon(Icons.people_outline, color: QorgoDesign.green),
           const SizedBox(width: 12),
           Expanded(
               child: Text('Доверенных контактов: ${data.contacts.length}',
@@ -100,9 +76,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                 : 'Управлять контактами →')),
         if (!data.deliveryReady)
           const Text(
-              'Автоматическая отправка пока недоступна. Можно открыть SMS для контакта или позвонить.',
-              style: TextStyle(color: Color(0xFF915000))),
+              'Укажите email аккаунта близкого, чтобы он получил SOS в QORGO.',
+              style: TextStyle(color: QorgoDesign.muted)),
       ])),
+      ..._incoming(data),
       _heading('Нужна помощь?'),
       SosSlider(
           enabled: !c.busy && alert == null && data.contacts.isNotEmpty,
@@ -131,42 +108,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               label: const Text('Определить')),
           if (c.location != null)
             TextButton.icon(
-                onPressed: c.busy ? null : c.openMap,
+                onPressed: c.busy
+                    ? null
+                    : () => _showMap(c.location!, 'Моё местоположение'),
                 icon: const Icon(Icons.map_outlined),
                 label: const Text('На карте')),
         ]),
       ])),
-      _heading('Я должен добраться'),
-      _card(journey == null
-          ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              const Text(
-                  'Укажите место и время прибытия. Если не подтвердите, сервер создаст тревогу.'),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                  onPressed: c.busy || data.contacts.isEmpty
-                      ? null
-                      : () => startJourney(context, c),
-                  icon: const Icon(Icons.timer_outlined),
-                  label: const Text('Начать сопровождение')),
-            ])
-          : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text(journey.destination,
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold)),
-              Text('Прибыть до ${timeLabel(journey.deadline)}'),
-              Text(journey.deadline.isBefore(DateTime.now())
-                  ? 'Проверяем истечение времени…'
-                  : 'Осталось ${journey.deadline.difference(DateTime.now()).inMinutes + 1} мин.'),
-              const SizedBox(height: 12),
-              FilledButton(
-                  onPressed:
-                      c.busy ? null : () => c.finishJourney(journey, true),
-                  child: const Text('Я добрался')),
-              TextButton(
-                  onPressed:
-                      c.busy ? null : () => c.finishJourney(journey, false),
-                  child: const Text('Отменить сопровождение')),
-            ])),
     ]);
   }
 
@@ -183,8 +131,14 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           const SizedBox(height: 8),
           const Text(
               'Принятие сервисом не подтверждает получение сообщения человеком.',
-              style: TextStyle(fontSize: 12, color: Colors.black54)),
+              style: TextStyle(fontSize: 12, color: QorgoDesign.muted)),
           if (alert.location == null) const Text('SOS создан без геопозиции.'),
+          if (alert.location != null)
+            TextButton.icon(
+              onPressed: () => _showMap(alert.location!, 'Место SOS'),
+              icon: const Icon(Icons.map_outlined),
+              label: const Text('Место SOS'),
+            ),
           if (alert.resolvedAt == null) ...[
             if (alert.deliveries.any((d) => d.status == 'unknown'))
               TextButton(
@@ -282,10 +236,43 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         const SizedBox(height: 8),
         const Text(
             'SMS открывается в приложении сообщений. Отправку подтверждаете вы.',
-            style: TextStyle(color: Colors.black54)),
+            style: TextStyle(color: QorgoDesign.muted)),
       ]);
+  List<Widget> _incoming(Snapshot data, {bool includeResolved = false}) {
+    final incoming = data.incoming
+        .where((v) => includeResolved || v.alert.resolvedAt == null);
+    if (incoming.isEmpty) return [];
+    return [
+      _heading('Близким нужна помощь'),
+      for (final item in incoming)
+        _card(Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('${item.senderName}: ${item.alert.title}',
+              style:
+                  const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(timeLabel(item.alert.createdAt)),
+          if (item.alert.resolvedAt != null)
+            const Text('Отправитель завершил тревогу'),
+          if (item.alert.location != null)
+            TextButton.icon(
+                onPressed: c.busy
+                    ? null
+                    : () => _showMap(
+                        item.alert.location!, 'SOS: ${item.senderName}'),
+                icon: const Icon(Icons.map_outlined),
+                label: const Text('Место SOS')),
+          if (item.acknowledged)
+            const Text('Вы подтвердили: помогаю')
+          else if (item.alert.resolvedAt == null)
+            FilledButton(
+                onPressed: c.busy ? null : () => c.acknowledge(item.deliveryId),
+                child: const Text('Помогаю — подтвердить SOS')),
+        ])),
+    ];
+  }
+
   Widget _events(Snapshot data) =>
       Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        ..._incoming(data, includeResolved: true),
         _heading('История событий'),
         if (data.alerts.isEmpty && data.journeys.isEmpty)
           _card(const Text(
@@ -303,20 +290,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Widget _profile(Snapshot data) =>
       Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         _heading('Мой профиль'),
-        _card(ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.workspace_premium_outlined),
-          title: const Text('Тарифы QORGO'),
-          subtitle: const Text('Бесплатный · Premium · Семейный'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const TariffsScreen())),
-        )),
-        const SizedBox(height: 12),
         _card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(data.profile.name,
               style:
-                  const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
           Text(data.profile.email),
           TextButton(
               onPressed: c.busy
@@ -337,16 +314,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       ]);
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-            title: const Text('QORGO',
-                style:
-                    TextStyle(fontWeight: FontWeight.w900, letterSpacing: 3)),
-            actions: [
-              IconButton(
-                  tooltip: 'Обновить',
-                  onPressed: c.busy ? null : c.refresh,
-                  icon: const Icon(Icons.refresh))
-            ]),
+        appBar: AppBar(title: const QorgoBrand(size: 24), actions: [
+          IconButton(
+              tooltip: 'Обновить',
+              onPressed: c.busy ? null : c.refresh,
+              icon: const Icon(Icons.refresh))
+        ]),
         body: SafeArea(
             child: Column(children: [
           if (c.busy) const LinearProgressIndicator(),
@@ -387,7 +360,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                                 Text('Обновлено ${timeLabel(c.syncedAt!)}',
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
-                                        fontSize: 12, color: Colors.black54)),
+                                        fontSize: 12,
+                                        color: QorgoDesign.muted)),
                             ]),
                       )))),
         ])),

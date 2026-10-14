@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import '../domain/entities.dart';
+import '../../domain/entities.dart';
 
 class ApiClient {
   ApiClient(this.baseUrl, {http.Client? client})
       : client = client ?? http.Client() {
-    if (kReleaseMode && Uri.parse(baseUrl).scheme != 'https') {
+    if (kReleaseMode && Uri.parse(baseсUrl).scheme != 'https') {
       throw const QorgoException('Для сервера требуется HTTPS.');
     }
   }
@@ -19,7 +19,9 @@ class ApiClient {
     try {
       final request = http.Request(method, Uri.parse('$baseUrl/$path'));
       request.headers['Content-Type'] = 'application/json';
-      if (token != null) request.headers['Authorization'] = 'Token $token';
+      if (token != null && path != 'login/' && path != 'register/') {
+        request.headers['Authorization'] = 'Token $token';
+      }
       if (body != null) request.body = jsonEncode(body);
       final response = await http.Response.fromStream(
               await client.send(request).timeout(const Duration(seconds: 15)))
@@ -33,6 +35,7 @@ class ApiClient {
         }
       }
       if (response.statusCode == 401) {
+        token = null;
         throw const QorgoException('Войдите в аккаунт повторно.',
             unauthorized: true);
       }

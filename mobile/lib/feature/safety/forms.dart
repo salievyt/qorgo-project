@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../domain/entities.dart';
-import 'app_controller.dart';
+import '../../domain/entities.dart';
+import '../app/app_view_model.dart';
 
-Future<void> editContact(BuildContext context, AppController controller,
+Future<void> editContact(BuildContext context, AppViewModel controller,
         [Contact? contact]) =>
     showModalBottomSheet(
         context: context,
@@ -12,7 +12,7 @@ Future<void> editContact(BuildContext context, AppController controller,
 
 class ContactForm extends StatefulWidget {
   const ContactForm({super.key, required this.controller, this.contact});
-  final AppController controller;
+  final AppViewModel controller;
   final Contact? contact;
   @override
   State<ContactForm> createState() => _ContactFormState();
@@ -56,7 +56,7 @@ class _ContactFormState extends State<ContactForm> {
                               ? 'Добавить близкого'
                               : 'Изменить контакт',
                           style: const TextStyle(
-                              fontSize: 24, fontWeight: FontWeight.bold)),
+                              fontSize: 22, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 20),
                       TextFormField(
                           controller: _name,
@@ -79,8 +79,7 @@ class _ContactFormState extends State<ContactForm> {
                           controller: _email,
                           keyboardType: TextInputType.emailAddress,
                           decoration: const InputDecoration(
-                              labelText:
-                                  'Email для уведомлений (необязательно)'),
+                              labelText: 'Email аккаунта близкого в QORGO'),
                           validator: (v) => v!.trim().isEmpty ||
                                   RegExp(r'^\S+@\S+\.\S+$').hasMatch(v.trim())
                               ? null
@@ -126,7 +125,7 @@ class _ContactFormState extends State<ContactForm> {
       );
 }
 
-Future<void> startJourney(BuildContext context, AppController controller) =>
+Future<void> startJourney(BuildContext context, AppViewModel controller) =>
     showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -135,7 +134,7 @@ Future<void> startJourney(BuildContext context, AppController controller) =>
 
 class JourneyForm extends StatefulWidget {
   const JourneyForm({super.key, required this.controller});
-  final AppController controller;
+  final AppViewModel controller;
   @override
   State<JourneyForm> createState() => _JourneyFormState();
 }
@@ -166,7 +165,7 @@ class _JourneyFormState extends State<JourneyForm> {
                     children: [
                       const Text('Я должен добраться',
                           style: TextStyle(
-                              fontSize: 24, fontWeight: FontWeight.bold)),
+                              fontSize: 22, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 12),
                       const Text(
                           'Если вы не подтвердите прибытие, сервер создаст SOS для ваших контактов. Необходимо настроить сервис отправки.'),

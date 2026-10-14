@@ -1,9 +1,11 @@
+import '../../core/design/qorgo_brand.dart';
+import '../../core/design/qorgo_theme.dart';
 import 'package:flutter/material.dart';
-import 'app_controller.dart';
+import '../app/app_view_model.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key, required this.controller});
-  final AppController controller;
+  final AppViewModel controller;
   @override
   State<AuthScreen> createState() => _AuthScreenState();
 }
@@ -28,21 +30,24 @@ class _AuthScreenState extends State<AuthScreen> {
               child: Center(
                   child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 480),
-        child: ListView(padding: const EdgeInsets.all(28), children: [
-          const SizedBox(height: 40),
-          const Icon(Icons.shield_outlined, size: 56, color: Color(0xFF176B54)),
-          const SizedBox(height: 20),
-          const Text('QORGO',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: 4)),
-          const SizedBox(height: 8),
+        child: ListView(padding: const EdgeInsets.all(24), children: [
+          const SizedBox(height: 32),
+          const Center(child: QorgoBrand(center: true)),
+          const SizedBox(height: 48),
+          Text(_register ? 'Ваш круг безопасности' : 'С возвращением',
+              style: const TextStyle(
+                  fontSize: 30,
+                  height: 1.15,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -1)),
+          const SizedBox(height: 12),
           Text(
               _register
-                  ? 'Создайте свой круг безопасности'
-                  : 'Войдите в свой аккаунт',
-              textAlign: TextAlign.center),
-          const SizedBox(height: 36),
+                  ? 'Создайте аккаунт, чтобы быть на связи с близкими.'
+                  : 'Войдите, чтобы быть на связи с близкими.',
+              style: const TextStyle(
+                  fontSize: 14, height: 1.5, color: QorgoDesign.muted)),
+          const SizedBox(height: 28),
           Form(
               key: _form,
               child: Column(children: [

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:qorgo/widgets/sos_slider.dart';
+import 'package:qorgo/core/widgets/sos_slider.dart';
 
 void main() {
   Future<void> mount(WidgetTester tester, VoidCallback activate) =>

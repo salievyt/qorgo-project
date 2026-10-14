@@ -85,3 +85,40 @@ class SafetyApiTests(APITestCase):
     def test_resolve_cancels_unsent_messages(self,dispatch):
         a,_ = create_alert(self.user,uuid.uuid4()); self.client.post(f'/api/alerts/{a.id}/resolve/'); process_deliveries()
         self.assertEqual(a.deliveries.get().status,'cancelled'); dispatch.assert_not_called()
+
+class InAppSosTests(APITestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.sender = User.objects.create_user(phone_number='+996700000091', email='sender@example.invalid', password='Qorgo-82-Strong!')
+        self.recipient = User.objects.create_user(phone_number='+996700000092', email='recipient@example.invalid', password='Qorgo-93-Strong!')
+        self.stranger = User.objects.create_user(phone_number='+996700000093', email='stranger@example.invalid', password='Qorgo-94-Strong!')
+        Contact.objects.create(owner=self.sender, name='Receiver', phone='+996700000099', email='RECIPIENT@example.invalid')
+
+    def test_sos_reaches_recipient_and_ack_is_visible_to_sender(self):
+        self.client.force_authenticate(self.sender)
+        alert = self.client.post('/api/alerts/', {'request_id': str(uuid.uuid4())}, format='json')
+        self.assertEqual(alert.status_code, 201)
+        self.client.force_authenticate(self.recipient)
+        incoming = self.client.get('/api/inbox/').data
+        self.assertEqual(len(incoming), 1)
+        self.assertEqual(incoming[0]['alert']['id'], alert.data['id'])
+        delivery_id = incoming[0]['delivery_id']
+        self.assertEqual(self.client.post(f'/api/inbox/{delivery_id}/acknowledge/').status_code, 200)
+        self.assertEqual(self.client.post(f'/api/inbox/{delivery_id}/acknowledge/').status_code, 200)
+        self.client.force_authenticate(self.sender)
+        self.assertEqual(self.client.get(f"/api/alerts/{alert.data['id']}/").data['deliveries'][0]['status'], 'received')
+
+    def test_inbox_and_confirmation_are_private(self):
+        alert, _ = create_alert(self.sender, uuid.uuid4())
+        self.client.force_authenticate(self.stranger)
+        self.assertEqual(self.client.get('/api/inbox/').data, [])
+        self.assertEqual(self.client.post(f'/api/inbox/{alert.deliveries.get().id}/acknowledge/').status_code, 404)
+        self.client.force_authenticate(self.recipient)
+        self.assertEqual(self.client.post(f'/api/alerts/{alert.id}/resolve/').status_code, 404)
+
+    def test_sender_resolution_remains_visible_to_recipient(self):
+        alert, _ = create_alert(self.sender, uuid.uuid4())
+        self.client.force_authenticate(self.sender)
+        self.client.post(f'/api/alerts/{alert.id}/resolve/')
+        self.client.force_authenticate(self.recipient)
+        self.assertIsNotNone(self.client.get('/api/inbox/').data[0]['alert']['resolved_at'])

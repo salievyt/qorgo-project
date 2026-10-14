@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:qorgo/presentation/tariffs_screen.dart';
+import 'package:qorgo/feature/subscriptions/tariffs_view.dart';
 
 void main() {
   testWidgets('Tariffs show complete annual prices on a narrow phone',
@@ -15,11 +15,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('1990 сом / год'), 250,
         scrollable: find.byType(Scrollable).first);
-    expect(find.text('≈ 166 сом/месяц · оплата за год целиком'), findsOneWidget);
+    expect(
+        find.text('≈ 166 сом/месяц · оплата за год целиком'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.scrollUntilVisible(find.text('3490 сом / год'), 250,
         scrollable: find.byType(Scrollable).first);
-    expect(find.text('≈ 291 сом/месяц · оплата за год целиком'), findsOneWidget);
+    expect(
+        find.text('≈ 291 сом/месяц · оплата за год целиком'), findsOneWidget);
     expect(tester.takeException(), isNull);
     expect(find.byType(FilledButton), findsNothing);
   });

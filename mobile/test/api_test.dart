@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:qorgo/data/api_client.dart';
+import 'package:qorgo/core/network/api_client.dart';
 import 'package:qorgo/data/remote_repository.dart';
 import 'package:qorgo/domain/entities.dart';
 
@@ -13,7 +13,7 @@ void main() {
       'SOS retains idempotency key through a network failure and application restart',
       () async {
     FlutterSecureStorage.setMockInitialValues(
-        {'qorgo.auth.token': 'test-token'});
+        {'qorgo.auth.token.example.invalid': 'test-token'});
     final keys = <String>[];
     var failed = false;
     final client = MockClient((request) async {
@@ -55,5 +55,23 @@ void main() {
         api.request('GET', 'profile/'),
         throwsA(isA<QorgoException>()
             .having((e) => e.unauthorized, 'unauthorized', true)));
+  });
+  test('Registration and login ignore an expired authenticated session',
+      () async {
+    final api = ApiClient('https://example.invalid/api',
+        client: MockClient((request) async {
+      expect(request.headers.containsKey('Authorization'), false);
+      return http.Response('{"token":"fresh"}', 200);
+    }))
+      ..token = 'expired-local-token';
+    await api.request('POST', 'register/', {'email': 'test@example.invalid'});
+    await api.request('POST', 'login/', {'email': 'test@example.invalid'});
+  });
+  test('Sessions from another API host are not restored', () async {
+    FlutterSecureStorage.setMockInitialValues(
+        {'qorgo.auth.token.localhost': 'local-token'});
+    final repository = RemoteSafetyRepository(
+        ApiClient('https://example.invalid/api'), const FlutterSecureStorage());
+    expect(await repository.restoreSession(), false);
   });
 }

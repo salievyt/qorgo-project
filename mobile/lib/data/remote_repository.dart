@@ -2,13 +2,13 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
 import '../domain/entities.dart';
 import '../domain/repositories.dart';
-import 'api_client.dart';
+import '../core/network/api_client.dart';
 
 class RemoteSafetyRepository implements SafetyRepository {
   RemoteSafetyRepository(this.api, this.storage);
   final ApiClient api;
   final FlutterSecureStorage storage;
-  static const _tokenKey = 'qorgo.auth.token';
+  String get _tokenKey => 'qorgo.auth.token.${Uri.parse(api.baseUrl).host}';
   String? _pendingId;
   String get _pendingKey => 'qorgo.sos.pending.${api.token}';
   @override
@@ -49,6 +49,7 @@ class RemoteSafetyRepository implements SafetyRepository {
       api.request('GET', 'journeys/'),
       api.request('GET', 'alerts/'),
       api.request('GET', 'capabilities/'),
+      api.request('GET', 'inbox/'),
     ]);
     return Snapshot(
         Profile(name: result[0]['name'], email: result[0]['email']),
@@ -69,8 +70,19 @@ class RemoteSafetyRepository implements SafetyRepository {
                 state: v['state']))
             .toList(),
         result[4]['sms'] == true,
-        result[4]['email'] == true);
+        result[4]['email'] == true,
+        incoming: (result[5] as List)
+            .map((v) => IncomingAlert(
+                deliveryId: v['delivery_id'],
+                senderName: v['sender_name'],
+                acknowledged: v['acknowledged'],
+                alert: _alert(v['alert'])))
+            .toList());
   }
+
+  @override
+  Future<void> acknowledge(int deliveryId) async =>
+      api.request('POST', 'inbox/$deliveryId/acknowledge/');
 
   @override
   Future<void> saveContact(Contact contact) async => api.request(

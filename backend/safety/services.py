@@ -5,6 +5,7 @@ from datetime import timedelta
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
@@ -15,9 +16,15 @@ from common.services import generate_map_link
 def create_alert(owner, request_id, reason='sos', **location):
     alert, created = Alert.objects.get_or_create(owner=owner, request_id=request_id, defaults={'reason': reason, **location})
     if created:
+        contacts = list(Contact.objects.filter(owner=owner))
+        registered = {email.lower() for email in get_user_model().objects.filter(
+            email__in=[c.email.lower() for c in contacts if c.email], is_active=True,
+        ).exclude(pk=owner.pk).values_list('email', flat=True)}
         Delivery.objects.bulk_create([
-            Delivery(alert=alert, name=c.name, phone=c.phone, email=c.email)
-            for c in Contact.objects.filter(owner=owner)
+            Delivery(alert=alert, name=c.name, phone=c.phone, email=c.email,
+                channel='app' if c.email.lower() in registered else '',
+                status='available' if c.email.lower() in registered else 'pending')
+            for c in contacts
         ])
     return alert, created
 
@@ -99,4 +106,7 @@ def process_deliveries():
             # retry is required; no unbounded retry loop for SOS messages.
             delivery.status = 'unknown'
             delivery.attempts += 1
-        delivery.save()
+        Delivery.objects.filter(id=delivery.id, status='sending').update(
+            status=delivery.status, channel=delivery.channel, provider_id=delivery.provider_id,
+            attempts=delivery.attempts, updated_at=timezone.now(),
+        )

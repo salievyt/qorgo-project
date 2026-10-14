@@ -141,7 +141,7 @@ class AlertViewSet(viewsets.ReadOnlyModelViewSet):
         alert = self.get_object()
         alert.resolved_at = timezone.now()
         alert.save(update_fields=['resolved_at'])
-        alert.deliveries.filter(status__in=['pending', 'unconfigured']).update(status='cancelled')
+        alert.deliveries.filter(status__in=['pending', 'unconfigured', 'available']).update(status='cancelled')
         return Response(AlertSerializer(alert).data)
     @extend_schema(request=None)
     @action(detail=True, methods=['post'])
@@ -187,3 +187,35 @@ class JourneyViewSet(viewsets.ReadOnlyModelViewSet):
         get_object_or_404(Journey, id=pk, owner=request.user)
         journey = finish_journey(request.user, pk, 'cancelled')
         return Response(JourneySerializer(journey).data)
+
+# In-app delivery uses the authenticated recipient's email. Sender-owned alert
+# endpoints remain separate so recipients cannot cancel another person's SOS.
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+def inbox(request):
+    from .models import Delivery
+    deliveries = Delivery.objects.filter(
+        email__iexact=request.user.email,
+    ).exclude(alert__owner=request.user).select_related('alert__owner').order_by('-alert__created_at')[:100]
+    return Response([{
+        'delivery_id': d.id,
+        'sender_name': d.alert.owner.first_name or d.alert.owner.email,
+        'acknowledged': d.channel == 'app' and d.status == 'received',
+        'alert': AlertSerializer(d.alert).data,
+    } for d in deliveries])
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+def acknowledge(request, delivery_id):
+    from .models import Delivery
+    with transaction.atomic():
+        delivery = get_object_or_404(
+            Delivery.objects.select_for_update(),
+            id=delivery_id, email__iexact=request.user.email,
+        )
+        if delivery.alert.owner_id == request.user.id:
+            return Response({'detail': 'Нельзя подтвердить собственный SOS.'}, status=400)
+        delivery.channel = 'app'
+        delivery.status = 'received'
+        delivery.save(update_fields=['channel', 'status', 'updated_at'])
+    return Response({'acknowledged': True})

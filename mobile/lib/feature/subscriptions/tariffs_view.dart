@@ -1,3 +1,4 @@
+import '../../core/design/qorgo_theme.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -79,7 +80,7 @@ class _TariffsScreenState extends State<TariffsScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(free ? 'Базовый доступ' : 'Планируется',
-              style: const TextStyle(color: Color(0xFF176B54))),
+              style: const TextStyle(color: QorgoDesign.green)),
           const SizedBox(height: 8),
           Text(plan['name'] as String,
               style: Theme.of(context).textTheme.headlineSmall),

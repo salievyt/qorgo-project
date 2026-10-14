@@ -18,13 +18,16 @@ class GeoPoint {
   const GeoPoint(this.latitude, this.longitude, this.accuracy, this.timestamp);
   final double latitude, longitude, accuracy;
   final DateTime timestamp;
-  String get mapUrl => 'https://www.google.com/maps?q=$latitude,$longitude';
+  String get mapUrl =>
+      'https://www.openstreetmap.org/?mlat=$latitude&mlon=$longitude#map=16/$latitude/$longitude';
 }
 
 class RecipientDelivery {
   const RecipientDelivery(this.name, this.status, this.channel);
   final String name, status, channel;
   String get label => switch (status) {
+        'available' => 'SOS доступен в приложении близкого',
+        'received' => 'Получатель подтвердил SOS в приложении',
         'accepted' => 'Принято сервисом ${channel == 'sms' ? 'SMS' : 'email'}',
         'unconfigured' => 'Сервис отправки не подключён',
         'unknown' => 'Результат отправки неизвестен',
@@ -54,13 +57,18 @@ class SafetyAlert {
       ? 'Тревога завершена'
       : deliveries.isEmpty
           ? 'Нет получателей'
-          : deliveries.every((d) => d.status == 'accepted')
-              ? 'Принято сервисом отправки'
-              : deliveries.any((d) => d.status == 'unknown')
-                  ? 'Требует проверки отправки'
-                  : deliveries.any((d) => d.status == 'unconfigured')
-                      ? 'Ожидает подключения отправки'
-                      : 'Обрабатывается';
+          : deliveries.every((d) => d.status == 'received')
+              ? 'Получатели подтвердили SOS'
+              : deliveries.every(
+                      (d) => d.status == 'available' || d.status == 'received')
+                  ? 'SOS доступен в QORGO близкого'
+                  : deliveries.every((d) => d.status == 'accepted')
+                      ? 'Принято сервисом отправки'
+                      : deliveries.any((d) => d.status == 'unknown')
+                          ? 'Требует проверки отправки'
+                          : deliveries.any((d) => d.status == 'unconfigured')
+                              ? 'Ожидает подключения отправки'
+                              : 'Обрабатывается';
 }
 
 class Journey {
@@ -83,7 +91,9 @@ class Journey {
 
 class Snapshot {
   const Snapshot(this.profile, this.contacts, this.alerts, this.journeys,
-      this.smsReady, this.emailReady);
+      this.smsReady, this.emailReady,
+      {this.incoming = const []});
+  final List<IncomingAlert> incoming;
   final Profile profile;
   final List<Contact> contacts;
   final List<SafetyAlert> alerts;
@@ -98,4 +108,16 @@ class QorgoException implements Exception {
   final bool unauthorized;
   @override
   String toString() => message;
+}
+
+class IncomingAlert {
+  const IncomingAlert(
+      {required this.deliveryId,
+      required this.senderName,
+      required this.acknowledged,
+      required this.alert});
+  final int deliveryId;
+  final String senderName;
+  final bool acknowledged;
+  final SafetyAlert alert;
 }

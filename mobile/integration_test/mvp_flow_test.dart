@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:qorgo/data/api_client.dart';
+import 'package:qorgo/core/network/api_client.dart';
 import 'package:qorgo/data/device_gateway.dart';
 import 'package:qorgo/data/remote_repository.dart';
-import 'package:qorgo/presentation/app_controller.dart';
-import 'package:qorgo/presentation/app_shell.dart';
+import 'package:qorgo/feature/app/app_view_model.dart';
+import 'package:qorgo/feature/app/app_view.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -16,7 +16,7 @@ void main() {
     const storage = FlutterSecureStorage();
     final api = ApiClient('http://127.0.0.1:8000/api');
     final repository = RemoteSafetyRepository(api, storage);
-    final controller = AppController(repository, NativeDeviceGateway());
+    final controller = AppViewModel(repository, NativeDeviceGateway());
     await controller.initialize();
     if (controller.signedIn) await controller.logout();
     await tester.pumpWidget(QorgoApp(controller: controller));

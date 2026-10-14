@@ -1,6 +1,7 @@
 import 'entities.dart';
 
 abstract interface class SafetyRepository {
+  Future<void> acknowledge(int deliveryId);
   Future<bool> restoreSession();
   Future<void> signIn(String email, String password, {String? name});
   Future<void> signOut();

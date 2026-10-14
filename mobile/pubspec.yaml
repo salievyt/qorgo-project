@@ -8,10 +8,13 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_secure_storage: ^11.2.0
+  flutter_map: ^8.3.2
+  latlong2: ^0.9.1
   geolocator: ^14.1.1
   http: ^1.6.0
   url_launcher: ^6.3.3
   uuid: ^4.6.0
+  flutter_svg: ^2.3.0
 dev_dependencies:
   integration_test:
     sdk: flutter
@@ -22,3 +25,12 @@ flutter:
   uses-material-design: true
   assets:
     - assets/tariffs.json
+    - assets/brand/qorgo-dark.svg
+    - assets/fonts/OFL.txt
+  fonts:
+    - family: Onest
+      fonts:
+        - asset: assets/fonts/Onest-latin.ttf
+    - family: OnestCyrillic
+      fonts:
+        - asset: assets/fonts/Onest-cyrillic.ttf

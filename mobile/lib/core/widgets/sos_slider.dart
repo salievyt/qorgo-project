@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../design/qorgo_theme.dart';
 
 class SosSlider extends StatefulWidget {
   const SosSlider({super.key, required this.onActivate, this.enabled = true});
@@ -33,7 +34,7 @@ class _SosSliderState extends State<SosSlider> {
             child: Container(
               height: 80,
               decoration: BoxDecoration(
-                color: widget.enabled ? const Color(0xFFDF3948) : Colors.grey,
+                color: widget.enabled ? QorgoDesign.danger : Colors.grey,
                 borderRadius: BorderRadius.circular(40),
               ),
               child: Stack(
@@ -47,7 +48,7 @@ class _SosSliderState extends State<SosSlider> {
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: 1.5,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
@@ -84,9 +85,9 @@ class _SosSliderState extends State<SosSlider> {
                         child: const Text(
                           'SOS',
                           style: TextStyle(
-                            color: Color(0xFFDF3948),
+                            color: QorgoDesign.danger,
                             fontSize: 20,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
