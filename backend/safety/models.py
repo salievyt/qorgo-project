@@ -2,13 +2,14 @@ from django.conf import settings
 from django.db import models
 
 class Contact(models.Model):
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='trusted_by_contacts')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=20)
     email = models.EmailField(blank=True)
     relationship = models.CharField(max_length=60, blank=True)
     class Meta:
-        constraints = [models.UniqueConstraint(fields=['owner', 'phone'], name='unique_contact_phone')]
+        constraints = [models.UniqueConstraint(fields=['owner', 'phone'], name='unique_contact_phone'), models.UniqueConstraint(fields=['owner', 'recipient'], condition=models.Q(recipient__isnull=False), name='unique_contact_recipient')]
 
 class Alert(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -24,6 +25,7 @@ class Alert(models.Model):
         constraints = [models.UniqueConstraint(fields=['owner', 'request_id'], name='idempotent_alert')]
 
 class Delivery(models.Model):
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='received_safety_deliveries')
     alert = models.ForeignKey(Alert, related_name='deliveries', on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=20)

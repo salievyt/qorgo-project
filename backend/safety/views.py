@@ -5,10 +5,11 @@ from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import serializers, viewsets
-from rest_framework.decorators import api_view, permission_classes, authentication_classes, action
+from rest_framework.decorators import api_view, permission_classes, authentication_classes, action, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
@@ -17,6 +18,8 @@ from accounts.models import PrivacySettings
 from .models import Contact, Alert, Journey
 from .serializers import ContactSerializer, AlertSerializer, AlertInputSerializer, JourneySerializer
 from .services import create_alert, finish_journey, process_deadlines
+from .phone_contacts import normalize_phone, registered_user, PhoneLookupInput, PhoneLookupOutput
+from rest_framework.throttling import UserRateThrottle
 
 class Credentials(serializers.Serializer):
     email = serializers.EmailField(max_length=150)
@@ -74,10 +77,24 @@ def logout(request):
 @authentication_classes([TokenAuthentication])
 def profile(request):
     if request.method == 'PATCH':
-        field = serializers.CharField(max_length=100, allow_blank=False)
-        request.user.first_name = field.run_validation(request.data.get('name', ''))
-        request.user.save(update_fields=['first_name'])
-    return Response({'name': request.user.first_name, 'email': request.user.email})
+        updates = []
+        if 'name' in request.data:
+            request.user.first_name = serializers.CharField(max_length=100, allow_blank=False).run_validation(request.data['name'])
+            updates.append('first_name')
+        if 'phone_number' in request.data:
+            raw = serializers.CharField(max_length=40, allow_blank=True).run_validation(request.data['phone_number'])
+            phone = normalize_phone(raw) if raw else None
+            request.user.phone_number = phone
+            updates.append('phone_number')
+        if not updates:
+            return Response({'detail': 'Укажите имя или номер телефона.'}, status=400)
+        try:
+            with transaction.atomic():
+                request.user.save(update_fields=updates)
+        except IntegrityError:
+            return Response({'detail': 'Этот номер уже используется другим аккаунтом.'}, status=400)
+    return Response({'name': request.user.first_name, 'email': request.user.email,
+                     'phone_number': str(request.user.phone_number) if request.user.phone_number else ''})
 
 @extend_schema(tags=['Mobile MVP'], responses=CapabilitiesSerializer)
 @api_view(['GET'])
@@ -96,7 +113,7 @@ class ContactViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return Contact.objects.none()
-        return Contact.objects.filter(owner=self.request.user).order_by('id')
+        return Contact.objects.filter(owner=self.request.user).select_related('recipient').order_by('id')
     def perform_destroy(self, instance):
         if Contact.objects.filter(owner=self.request.user).count() <= 1 and Journey.objects.filter(owner=self.request.user, state='active').exists():
             raise serializers.ValidationError({'detail': 'Сначала завершите активное сопровождение.'})
@@ -188,15 +205,16 @@ class JourneyViewSet(viewsets.ReadOnlyModelViewSet):
         journey = finish_journey(request.user, pk, 'cancelled')
         return Response(JourneySerializer(journey).data)
 
-# In-app delivery uses the authenticated recipient's email. Sender-owned alert
+# New in-app deliveries use an account ID; email remains for legacy deliveries. Sender-owned alert
 # endpoints remain separate so recipients cannot cancel another person's SOS.
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 def inbox(request):
     from .models import Delivery
-    deliveries = Delivery.objects.filter(
-        email__iexact=request.user.email,
-    ).exclude(alert__owner=request.user).select_related('alert__owner').order_by('-alert__created_at')[:100]
+    recipients = Q(recipient=request.user)
+    if request.user.email:
+        recipients |= Q(recipient__isnull=True, email__iexact=request.user.email)
+    deliveries = Delivery.objects.filter(recipients).exclude(alert__owner=request.user).select_related('alert__owner').order_by('-alert__created_at')[:100]
     return Response([{
         'delivery_id': d.id,
         'sender_name': d.alert.owner.first_name or d.alert.owner.email,
@@ -211,7 +229,8 @@ def acknowledge(request, delivery_id):
     with transaction.atomic():
         delivery = get_object_or_404(
             Delivery.objects.select_for_update(),
-            id=delivery_id, email__iexact=request.user.email,
+            (Q(recipient=request.user) | Q(recipient__isnull=True, email__iexact=request.user.email)) if request.user.email else Q(recipient=request.user),
+            id=delivery_id,
         )
         if delivery.alert.owner_id == request.user.id:
             return Response({'detail': 'Нельзя подтвердить собственный SOS.'}, status=400)
@@ -219,3 +238,27 @@ def acknowledge(request, delivery_id):
         delivery.status = 'received'
         delivery.save(update_fields=['channel', 'status', 'updated_at'])
     return Response({'acknowledged': True})
+
+
+class ContactLookupThrottle(UserRateThrottle):
+    scope = 'contact_lookup'
+    rate = '30/min'
+
+
+@extend_schema(tags=['Mobile MVP'], request=PhoneLookupInput, responses=PhoneLookupOutput)
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@throttle_classes([ContactLookupThrottle])
+def lookup_contact(request):
+    data = PhoneLookupInput(data=request.data)
+    data.is_valid(raise_exception=True)
+    phone = data.validated_data['phone']
+    if request.user.phone_number and str(request.user.phone_number) == phone:
+        return Response({'detail': 'Это ваш номер. Выберите номер близкого.'}, status=400)
+    user = registered_user(phone, request.user)
+    if user is None:
+        return Response({'registered': False, 'phone': phone})
+    visible = not user.privacy_settings or user.privacy_settings.show_profile
+    return Response({'registered': True, 'phone': phone,
+                     'name': user.get_full_name().strip() if visible and user.get_full_name().strip() else 'Пользователь QORGO',
+                     'already_added': Contact.objects.filter(Q(phone=phone) | Q(recipient=user), owner=request.user).exists()})

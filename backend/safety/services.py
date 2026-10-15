@@ -16,14 +16,16 @@ from common.services import generate_map_link
 def create_alert(owner, request_id, reason='sos', **location):
     alert, created = Alert.objects.get_or_create(owner=owner, request_id=request_id, defaults={'reason': reason, **location})
     if created:
-        contacts = list(Contact.objects.filter(owner=owner))
+        contacts = list(Contact.objects.filter(owner=owner).select_related('recipient'))
         registered = {email.lower() for email in get_user_model().objects.filter(
-            email__in=[c.email.lower() for c in contacts if c.email], is_active=True,
+            email__in=[c.email.lower() for c in contacts if c.email], is_active=True, is_deleted=False,
         ).exclude(pk=owner.pk).values_list('email', flat=True)}
         Delivery.objects.bulk_create([
-            Delivery(alert=alert, name=c.name, phone=c.phone, email=c.email,
-                channel='app' if c.email.lower() in registered else '',
-                status='available' if c.email.lower() in registered else 'pending')
+            Delivery(alert=alert, name=c.name, phone=c.phone,
+                recipient=c.recipient if c.recipient and c.recipient.is_active and not c.recipient.is_deleted else None,
+                email='' if c.recipient_id else c.email,
+                channel='app' if (c.recipient and c.recipient.is_active and not c.recipient.is_deleted) or (not c.recipient_id and c.email.lower() in registered) else '',
+                status='available' if (c.recipient and c.recipient.is_active and not c.recipient.is_deleted) or (not c.recipient_id and c.email.lower() in registered) else 'pending')
             for c in contacts
         ])
     return alert, created

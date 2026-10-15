@@ -2,12 +2,31 @@ from drf_spectacular.utils import extend_schema_serializer
 import re
 from rest_framework import serializers
 from .models import Contact, Alert, Delivery, Journey
+from .phone_contacts import registered_user
 
 @extend_schema_serializer(component_name='MobileContact')
 class ContactSerializer(serializers.ModelSerializer):
+    in_qorgo = serializers.SerializerMethodField()
+    link_registered = serializers.BooleanField(write_only=True, required=False, default=False)
+    def get_in_qorgo(self, instance):
+        return bool(instance.recipient_id and instance.recipient.is_active and not instance.recipient.is_deleted)
+    def validate(self, attrs):
+        required = attrs.pop('link_registered', False)
+        owner = self.context['request'].user
+        phone = attrs.get('phone', self.instance.phone if self.instance else '')
+        if owner.phone_number and str(owner.phone_number) == phone:
+            raise serializers.ValidationError({'phone': 'Нельзя добавить себя в близкие.'})
+        recipient = self.instance.recipient if self.instance and self.instance.phone == phone and self.instance.recipient_id else registered_user(phone, owner)
+        if recipient and (not recipient.is_active or recipient.is_deleted):
+            recipient = None
+        if required and recipient is None:
+            raise serializers.ValidationError({'phone': 'Аккаунт с этим номером больше не доступен. Найдите контакт заново.'})
+        attrs['recipient'] = recipient
+        return attrs
+
     class Meta:
         model = Contact
-        fields = ['id', 'name', 'phone', 'email', 'relationship']
+        fields = ['id', 'name', 'phone', 'email', 'relationship', 'in_qorgo', 'link_registered']
     def validate_phone(self, value):
         value = re.sub(r'[\s()\-]', '', value)
         if not re.fullmatch(r'\+[1-9]\d{7,14}', value):

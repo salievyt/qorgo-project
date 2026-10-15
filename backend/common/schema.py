@@ -17,10 +17,12 @@ class TokenSerializer(serializers.Serializer):
 class LegacyProfileSerializer(serializers.Serializer):
     name = serializers.CharField()
     email = serializers.EmailField()
+    phone_number = serializers.CharField(allow_blank=True)
 
 
 class LegacyProfileUpdateSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=100)
+    name = serializers.CharField(max_length=100, required=False)
+    phone_number = serializers.CharField(max_length=40, allow_blank=True, required=False)
 
 
 class CapabilitiesSerializer(serializers.Serializer):

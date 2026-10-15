@@ -122,3 +122,84 @@ class InAppSosTests(APITestCase):
         self.client.post(f'/api/alerts/{alert.id}/resolve/')
         self.client.force_authenticate(self.recipient)
         self.assertIsNotNone(self.client.get('/api/inbox/').data[0]['alert']['resolved_at'])
+
+class PhoneContactTests(APITestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.owner = User.objects.create_user(phone_number='+996700123450', email='lookup-owner@example.invalid', password='Qorgo-82-Strong!')
+        self.friend = User.objects.create_user(phone_number='+996700123456', email='private-friend@example.invalid', first_name='Best Friend', password='Qorgo-83-Strong!')
+        self.client.force_authenticate(self.owner)
+
+    def test_exact_lookup_normalizes_local_phone_without_exposing_email(self):
+        result = self.client.post('/api/contacts/lookup/', {'phone': '0700 123-456'}, format='json')
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.data['phone'], '+996700123456')
+        self.assertEqual(result.data['name'], 'Best Friend')
+        self.assertNotIn('email', result.data)
+        self.assertNotIn('id', result.data)
+        self.assertFalse(result.data['already_added'])
+        self.assertEqual(self.client.post('/api/contacts/lookup/', {'phone': '123'}, format='json').status_code, 400)
+
+    def test_linked_friend_receives_sos_without_email_and_after_profile_change(self):
+        result = self.client.post('/api/contacts/', {'name':'Local Alias', 'phone':str(self.friend.phone_number), 'link_registered':True}, format='json')
+        self.assertEqual(result.status_code, 201)
+        self.assertTrue(result.data['in_qorgo'])
+        self.assertEqual(result.data['email'], '')
+        self.assertEqual(Contact.objects.get(pk=result.data['id']).recipient, self.friend)
+        self.assertTrue(self.client.post('/api/contacts/lookup/', {'phone':str(self.friend.phone_number)}, format='json').data['already_added'])
+        self.assertEqual(self.client.post('/api/contacts/', {'name':'Duplicate','phone':str(self.friend.phone_number),'link_registered':True}, format='json').status_code, 400)
+        alert = self.client.post('/api/alerts/', {'request_id':str(uuid.uuid4())}, format='json')
+        self.assertEqual(alert.data['deliveries'][0]['status'], 'available')
+        self.friend.email = 'changed-friend@example.invalid'
+        self.friend.phone_number = '+996700123457'
+        self.friend.save(update_fields=['email','phone_number'])
+        self.client.force_authenticate(self.friend)
+        incoming = self.client.get('/api/inbox/').data
+        self.assertEqual(len(incoming), 1)
+        self.assertEqual(incoming[0]['alert']['id'], alert.data['id'])
+        self.assertEqual(self.client.post(f"/api/inbox/{incoming[0]['delivery_id']}/acknowledge/").status_code, 200)
+        self.client.force_authenticate(self.owner)
+        self.assertEqual(self.client.get(f"/api/alerts/{alert.data['id']}/").data['deliveries'][0]['status'], 'received')
+        # Editing the local alias retains the account association.
+        self.assertEqual(self.client.patch(f"/api/contacts/{result.data['id']}/", {'name':'New Alias'}, format='json').status_code, 200)
+        self.assertEqual(Contact.objects.get(pk=result.data['id']).recipient, self.friend)
+
+    def test_missing_blocked_deleted_and_own_phone_are_not_addable_as_registered(self):
+        self.assertEqual(self.client.post('/api/contacts/lookup/', {'phone':str(self.owner.phone_number)}, format='json').status_code, 400)
+        self.friend.is_active = False
+        self.friend.save(update_fields=['is_active'])
+        self.assertFalse(self.client.post('/api/contacts/lookup/', {'phone':str(self.friend.phone_number)}, format='json').data['registered'])
+        self.assertEqual(self.client.post('/api/contacts/', {'name':'Blocked','phone':str(self.friend.phone_number),'link_registered':True}, format='json').status_code, 400)
+        self.friend.is_active = True
+        self.friend.is_deleted = True
+        self.friend.save(update_fields=['is_active','is_deleted'])
+        self.assertFalse(self.client.post('/api/contacts/lookup/', {'phone':str(self.friend.phone_number)}, format='json').data['registered'])
+
+    def test_profile_number_can_be_saved_but_cannot_take_another_accounts_number(self):
+        self.assertEqual(self.client.patch('/api/profile/', {'phone_number':'0700 123 459'}, format='json').data['phone_number'], '+996700123459')
+        self.assertEqual(self.client.patch('/api/profile/', {'phone_number':str(self.friend.phone_number)}, format='json').status_code, 400)
+        self.owner.refresh_from_db()
+        self.assertEqual(str(self.owner.phone_number), '+996700123459')
+        self.assertEqual(self.client.patch('/api/profile/', {'phone_number':''}, format='json').data['phone_number'], '')
+
+    def test_lookup_requires_login(self):
+        self.client = APIClient()
+        self.assertEqual(self.client.post('/api/contacts/lookup/', {'phone':str(self.friend.phone_number)}, format='json').status_code, 401)
+
+    def test_existing_contacts_can_be_linked_without_duplicate_account_associations(self):
+        from django.apps import apps
+        from django.db import connection
+        from importlib import import_module
+        from types import SimpleNamespace
+        legacy = Contact.objects.create(owner=self.owner, name='Legacy Friend', phone=str(self.friend.phone_number))
+        migrate = import_module('safety.migrations.0003_link_existing_phone_contacts').link_existing_contacts
+        migrate(apps, SimpleNamespace(connection=connection))
+        legacy.refresh_from_db()
+        self.assertEqual(legacy.recipient, self.friend)
+        # Re-running is harmless and a second old number does not create two links.
+        other = Contact.objects.create(owner=self.owner, name='New Number', phone='+996700123459')
+        self.friend.phone_number = other.phone
+        self.friend.save(update_fields=['phone_number'])
+        migrate(apps, SimpleNamespace(connection=connection))
+        other.refresh_from_db()
+        self.assertIsNone(other.recipient)
