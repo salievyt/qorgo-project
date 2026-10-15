@@ -20,6 +20,7 @@ class UserAdmin(QorgoAdminLabelsMixin, BaseUserAdmin):
     search_fields = ('username', 'phone_number', 'email', 'first_name', 'last_name')
     ordering = ('-date_joined',)
     inlines = [EmergencyContactInline]
+    readonly_fields = ('last_active_at',)
 
     fieldsets = (
         ('Вход в аккаунт', {'fields': ('username', 'phone_number', 'password')}),
