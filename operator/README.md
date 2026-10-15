@@ -1,0 +1,20 @@
+# QORGO Operator
+
+React + Vite диспетчерская для операторов QORGO. Отдельный Vercel-проект из
+этого репозитория с Root Directory `operator` публикует сайт на
+`https://operator.qorgo.services`. После создания проекта добавьте домен в
+Vercel и направьте DNS CNAME `operator` на выданное Vercel значение.
+
+## Локальный запуск
+
+```sh
+npm install
+npm run dev
+```
+
+Приложение обращается напрямую к `https://api.qorgo.services/api/v1`. Backend
+должен разрешать origin `https://operator.qorgo.services` в
+`CORS_ALLOWED_ORIGINS`.
+
+Операторы входят по рабочему номеру и паролю. Сессия хранится в
+`sessionStorage` вкладки браузера; права доступа проверяются API.
