@@ -58,6 +58,7 @@ class PrivacySettings(models.Model):
     show_profile = models.BooleanField(default=True, verbose_name=_('Show profile'))
     share_battery_level = models.BooleanField(default=True, verbose_name=_('Share battery level'))
     share_speed = models.BooleanField(default=True, verbose_name=_('Share speed'))
+    share_with_operators = models.BooleanField(default=False, verbose_name=_('Share location with operators'))
 
     class Meta:
         verbose_name = _('Privacy settings')

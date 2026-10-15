@@ -1,6 +1,7 @@
 from common.schema import SuccessSerializer
 from django.db import transaction
 from django.utils import timezone
+from datetime import timedelta
 from rest_framework import status, generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,6 +14,7 @@ from .serializers import (
 )
 from families.models import Family, FamilyMembership
 from accounts.models import User
+from common.permissions import IsEmergencyOperator
 
 
 @extend_schema(summary='Update user location', tags=['Location'])
@@ -102,3 +104,30 @@ class MyLocationView(APIView):
             return Response(ActiveLocationSerializer(location).data)
         except ActiveLocation.DoesNotExist:
             return Response({'location': None})
+
+
+class OperatorLocationsView(generics.ListAPIView):
+    """Current points visible only to emergency operators and opted-in users."""
+    permission_classes = [permissions.IsAuthenticated, IsEmergencyOperator]
+
+    def list(self, request, *args, **kwargs):
+        rows = ActiveLocation.objects.select_related('user').filter(
+            user__privacy_settings__share_with_operators=True,
+            user__is_active=True,
+            user__is_deleted=False,
+        ).order_by('-last_updated')
+        return Response([{
+            'user': {
+                'id': str(row.user_id),
+                'first_name': row.user.first_name,
+                'last_name': row.user.last_name,
+                'phone_number': str(row.user.phone_number or ''),
+            },
+            'latitude': row.latitude,
+            'longitude': row.longitude,
+            'accuracy': row.accuracy,
+            'speed': row.speed,
+            'battery_level': row.battery_level,
+            'last_updated': row.last_updated,
+            'is_stale': row.is_stale or row.last_updated < timezone.now() - timedelta(minutes=3),
+        } for row in rows])

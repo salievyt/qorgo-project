@@ -3,9 +3,9 @@ from . import views
 
 urlpatterns = [
     path('operator/incidents/', views.OperatorIncidentListView.as_view(), name='operator-incidents'),
-    path('operator/incidents/<uuid:pk>/', views.OperatorIncidentDetailView.as_view(), name='operator-incident-detail'),
-    path('operator/incidents/<uuid:alert_id>/take/', views.OperatorTakeIncidentView.as_view(), name='operator-incident-take'),
-    path('operator/incidents/<uuid:alert_id>/close/', views.OperatorCloseIncidentView.as_view(), name='operator-incident-close'),
+    path('operator/incidents/<str:pk>/', views.OperatorIncidentDetailView.as_view(), name='operator-incident-detail'),
+    path('operator/incidents/<str:alert_id>/take/', views.OperatorTakeIncidentView.as_view(), name='operator-incident-take'),
+    path('operator/incidents/<str:alert_id>/close/', views.OperatorCloseIncidentView.as_view(), name='operator-incident-close'),
     path('alerts/', views.AlertListView.as_view(), name='alerts-list'),
     path('alerts/create/', views.CreateAlertView.as_view(), name='alerts-create'),
     path('alerts/<uuid:pk>/', views.AlertDetailView.as_view(), name='alerts-detail'),

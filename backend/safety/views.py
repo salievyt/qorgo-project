@@ -150,8 +150,6 @@ class AlertViewSet(viewsets.ReadOnlyModelViewSet):
         existing = Alert.objects.filter(owner=request.user, request_id=data.validated_data['request_id']).first()
         if existing:
             return Response(AlertSerializer(existing).data)
-        if not Contact.objects.filter(owner=request.user).exists():
-            return Response({'detail': 'Добавьте хотя бы один доверенный контакт.'}, status=400)
         alert, created = create_alert(request.user, **data.validated_data)
         return Response(AlertSerializer(alert).data, status=201 if created else 200)
     @extend_schema(request=None)
@@ -283,6 +281,26 @@ def continuous_location(request):
             user=request.user, timestamp__lt=timezone.now() - timedelta(days=30)
         ).delete()
     return Response({'recorded_at': point.timestamp}, status=201)
+
+
+@api_view(['GET', 'POST'])
+@authentication_classes([TokenAuthentication])
+def operator_location_sharing(request):
+    """Read or update the user's explicit consent for operator location visibility."""
+    try:
+        settings = request.user.privacy_settings
+    except PrivacySettings.DoesNotExist:
+        settings = PrivacySettings.objects.create()
+        request.user.privacy_settings = settings
+        request.user.save(update_fields=['privacy_settings'])
+    if request.method == 'GET':
+        return Response({'enabled': settings.share_with_operators})
+    enabled = request.data.get('enabled')
+    if not isinstance(enabled, bool):
+        return Response({'enabled': ['Укажите true или false.']}, status=400)
+    settings.share_with_operators = enabled
+    settings.save(update_fields=['share_with_operators'])
+    return Response({'enabled': enabled})
 
 
 @extend_schema(tags=['Mobile MVP'], request=PhoneLookupInput, responses=PhoneLookupOutput)

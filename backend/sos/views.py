@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 from django.db import transaction
 from rest_framework import status, generics, permissions
 from rest_framework.response import Response
@@ -146,7 +147,7 @@ class AlertEvidenceListView(generics.ListAPIView):
 
 @extend_schema(tags=['QORGO Agent'])
 class OperatorIncidentListView(generics.ListAPIView):
-    """Queue for responders. Operators only receive active incidents and their own history."""
+    """Unified queue for current and legacy mobile SOS requests."""
     permission_classes = [permissions.IsAuthenticated, IsEmergencyOperator]
     serializer_class = OperatorIncidentSerializer
 
@@ -157,12 +158,59 @@ class OperatorIncidentListView(generics.ListAPIView):
             status=Alert.Status.ACTIVE,
         ).order_by('assigned_at', '-started_at')
 
+    def list(self, request, *args, **kwargs):
+        from safety.models import Alert as MobileAlert
+        current = list(OperatorIncidentSerializer(self.get_queryset(), many=True).data)
+        mobile_alerts = MobileAlert.objects.select_related('owner', 'assigned_operator').filter(
+            resolved_at__isnull=True,
+        ).order_by('assigned_at', '-created_at')
+        current.extend(self.serialize_mobile_alert(alert) for alert in mobile_alerts)
+        current.sort(key=lambda row: row.get('started_at') or '', reverse=True)
+        current.sort(key=lambda row: bool(row.get('assigned_operator')))
+        return Response({'results': current})
+
+    @staticmethod
+    def serialize_mobile_alert(alert):
+        return {
+            'id': f'mvp-{alert.pk}',
+            'status': 'active',
+            'trigger_method': alert.reason,
+            'latitude': alert.latitude,
+            'longitude': alert.longitude,
+            'address': '',
+            'battery_level': 0,
+            'started_at': alert.created_at.isoformat(),
+            'resolved_at': alert.resolved_at,
+            'assigned_operator': str(alert.assigned_operator_id) if alert.assigned_operator_id else None,
+            'assigned_operator_name': (
+                alert.assigned_operator.get_full_name().strip()
+                or alert.assigned_operator.phone_number
+                or 'Оператор QORGO'
+            ) if alert.assigned_operator_id else '',
+            'assigned_at': alert.assigned_at.isoformat() if alert.assigned_at else None,
+            'operator_note': alert.operator_note,
+            'user': {
+                'id': str(alert.owner_id),
+                'first_name': alert.owner.first_name,
+                'last_name': alert.owner.last_name,
+                'phone_number': str(alert.owner.phone_number or ''),
+            },
+        }
+
 
 @extend_schema(tags=['QORGO Agent'])
 class OperatorIncidentDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated, IsEmergencyOperator]
     serializer_class = OperatorIncidentSerializer
     queryset = Alert.objects.select_related('user', 'assigned_operator')
+
+    def retrieve(self, request, *args, **kwargs):
+        alert_id = self.kwargs['pk']
+        if alert_id.startswith('mvp-') and alert_id[4:].isdigit():
+            from safety.models import Alert as MobileAlert
+            alert = get_object_or_404(MobileAlert.objects.select_related('owner', 'assigned_operator'), pk=int(alert_id[4:]))
+            return Response(OperatorIncidentListView.serialize_mobile_alert(alert))
+        return super().retrieve(request, *args, **kwargs)
 
 
 @extend_schema(tags=['QORGO Agent'])
@@ -171,6 +219,21 @@ class OperatorTakeIncidentView(APIView):
 
     @extend_schema(request=None, responses=OperatorIncidentSerializer)
     def post(self, request, alert_id):
+        if alert_id.startswith('mvp-') and alert_id[4:].isdigit():
+            from safety.models import Alert as MobileAlert
+            with transaction.atomic():
+                alert = MobileAlert.objects.select_for_update().select_related('owner', 'assigned_operator').filter(
+                    id=int(alert_id[4:]), resolved_at__isnull=True,
+                ).first()
+                if not alert:
+                    return Response({'detail': 'Активный инцидент не найден.'}, status=status.HTTP_404_NOT_FOUND)
+                if alert.assigned_operator_id and alert.assigned_operator_id != request.user.id:
+                    return Response({'detail': 'Инцидент уже принят другим оператором.'}, status=status.HTTP_409_CONFLICT)
+                if not alert.assigned_operator_id:
+                    alert.assigned_operator = request.user
+                    alert.assigned_at = timezone.now()
+                    alert.save(update_fields=['assigned_operator', 'assigned_at'])
+            return Response(OperatorIncidentListView.serialize_mobile_alert(alert))
         with transaction.atomic():
             alert = Alert.objects.select_for_update().select_related('assigned_operator').filter(
                 id=alert_id, status=Alert.Status.ACTIVE).first()
@@ -193,6 +256,20 @@ class OperatorCloseIncidentView(APIView):
     def post(self, request, alert_id):
         data = OperatorIncidentUpdateSerializer(data=request.data)
         data.is_valid(raise_exception=True)
+        if alert_id.startswith('mvp-') and alert_id[4:].isdigit():
+            from safety.models import Alert as MobileAlert
+            with transaction.atomic():
+                alert = MobileAlert.objects.select_for_update().select_related('owner', 'assigned_operator').filter(
+                    id=int(alert_id[4:]), resolved_at__isnull=True,
+                ).first()
+                if not alert:
+                    return Response({'detail': 'Активный инцидент не найден.'}, status=status.HTTP_404_NOT_FOUND)
+                if alert.assigned_operator_id != request.user.id:
+                    return Response({'detail': 'Сначала примите инцидент в работу.'}, status=status.HTTP_403_FORBIDDEN)
+                alert.operator_note = data.validated_data.get('note', alert.operator_note)
+                alert.resolved_at = timezone.now()
+                alert.save(update_fields=['operator_note', 'resolved_at'])
+            return Response(OperatorIncidentListView.serialize_mobile_alert(alert))
         with transaction.atomic():
             alert = Alert.objects.select_for_update().select_related('assigned_operator').filter(
                 id=alert_id, status=Alert.Status.ACTIVE).first()

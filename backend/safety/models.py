@@ -21,6 +21,9 @@ class Alert(models.Model):
     location_at = models.DateTimeField(null=True)
     location_accuracy = models.FloatField(null=True)
     resolved_at = models.DateTimeField(null=True)
+    assigned_operator = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='safety_assigned_incidents')
+    assigned_at = models.DateTimeField(null=True, blank=True)
+    operator_note = models.TextField(blank=True)
     class Meta:
         constraints = [models.UniqueConstraint(fields=['owner', 'request_id'], name='idempotent_alert')]
 

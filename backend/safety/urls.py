@@ -7,6 +7,7 @@ router.register('alerts', views.AlertViewSet, basename='alerts')
 router.register('journeys', views.JourneyViewSet, basename='journeys')
 urlpatterns = [
     path('api/location/', views.continuous_location),
+    path('api/location/operator-sharing/', views.operator_location_sharing),
     path('api/contacts/lookup/', views.lookup_contact),
     path('api/inbox/', views.inbox),
     path('api/inbox/<int:delivery_id>/acknowledge/', views.acknowledge),

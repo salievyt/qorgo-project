@@ -9,7 +9,7 @@ User = get_user_model()
 class PrivacySettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = PrivacySettings
-        fields = ('show_location', 'location_visibility', 'show_profile', 'share_battery_level', 'share_speed')
+        fields = ('show_location', 'location_visibility', 'show_profile', 'share_battery_level', 'share_speed', 'share_with_operators')
 
 
 class DeviceInfoSerializer(serializers.ModelSerializer):
@@ -108,7 +108,7 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
 class PrivacySettingsUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = PrivacySettings
-        fields = ('show_location', 'location_visibility', 'show_profile', 'share_battery_level', 'share_speed')
+        fields = ('show_location', 'location_visibility', 'show_profile', 'share_battery_level', 'share_speed', 'share_with_operators')
 
 
 class UserBasicSerializer(serializers.ModelSerializer):
