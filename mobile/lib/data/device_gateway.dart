@@ -62,7 +62,7 @@ class NativeDeviceGateway implements DeviceGateway {
           'Для непрерывной защиты нужен доступ к геолокации.');
     }
     const settings =
-        LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 30);
+        LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 5);
     await for (final p
         in Geolocator.getPositionStream(locationSettings: settings)) {
       yield GeoPoint(p.latitude, p.longitude, p.accuracy, p.timestamp);

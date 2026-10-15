@@ -38,8 +38,8 @@ class SafetyViewModel extends ViewModel {
         final interval = activeAlert != null
             ? const Duration(seconds: 5)
             : moving
-                ? const Duration(seconds: 45)
-                : const Duration(minutes: 10);
+                ? const Duration(seconds: 10)
+                : const Duration(minutes: 1);
         if (lastLocationSent == null ||
             DateTime.now().difference(lastLocationSent!) >= interval) {
           await repository.recordLocation(point, background: true);
