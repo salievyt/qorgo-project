@@ -15,6 +15,7 @@ dependencies:
   url_launcher: ^6.3.3
   uuid: ^4.6.0
   flutter_svg: ^2.3.0
+  flutter_native_contact_picker: ^0.0.12
 dev_dependencies:
   integration_test:
     sdk: flutter
@@ -26,6 +27,7 @@ flutter:
   assets:
     - assets/tariffs.json
     - assets/brand/qorgo-dark.svg
+    - assets/brand/qorgo-light.svg
     - assets/fonts/OFL.txt
   fonts:
     - family: Onest

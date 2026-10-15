@@ -1,4 +1,5 @@
 import '../../domain/repositories.dart';
+import '../contacts/contact_lookup_view_model.dart';
 import '../auth/auth_view_model.dart';
 import '../safety/safety_view_model.dart';
 
@@ -10,6 +11,8 @@ class AppViewModel extends SafetyViewModel {
       : auth = AuthViewModel(repository),
         super(repository, device);
   final AuthViewModel auth;
+  ContactLookupViewModel createContactLookup() =>
+      ContactLookupViewModel(repository, device);
 
   Future<void> initialize() async {
     await perform(() async {

@@ -12,6 +12,13 @@ export 'feature/app/app_view.dart' show QorgoApp;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: Color(0xFF030705),
+    systemNavigationBarIconBrightness: Brightness.light,
+  ));
   final controller = AppViewModel(
     RemoteSafetyRepository(
         ApiClient(Environment.apiUrl), const FlutterSecureStorage()),

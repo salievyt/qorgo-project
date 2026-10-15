@@ -1,7 +1,9 @@
 import '../../core/design/qorgo_brand.dart';
+import '../../core/widgets/bottom_nav_bar.dart';
 import '../../core/design/qorgo_theme.dart';
 import 'package:flutter/material.dart';
 import '../../domain/entities.dart';
+import '../../domain/use_cases.dart';
 import '../../core/widgets/sos_slider.dart';
 import '../app/app_view_model.dart';
 import 'forms.dart';
@@ -41,7 +43,7 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
 
   Widget _card(Widget child) => Card(
       elevation: 0,
-      color: Colors.white,
+      color: QorgoDesign.soft,
       child: Padding(padding: const EdgeInsets.all(20), child: child));
   Widget _heading(String text) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -54,67 +56,138 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
 
   Widget _home(Snapshot data) {
     final alert = c.activeAlert;
+    final hasContacts = data.contacts.isNotEmpty;
+    final point = c.location;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Text(
           data.profile.name.isEmpty
-              ? 'Вы под защитой близких'
+              ? 'Ваш круг безопасности'
               : 'Здравствуйте, ${data.profile.name}',
-          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600)),
-      const SizedBox(height: 12),
-      _card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          const Icon(Icons.people_outline, color: QorgoDesign.green),
-          const SizedBox(width: 12),
-          Expanded(
-              child: Text('Доверенных контактов: ${data.contacts.length}',
-                  style: const TextStyle(fontWeight: FontWeight.bold)))
-        ]),
-        TextButton(
-            onPressed: () => setState(() => _tab = 1),
-            child: Text(data.contacts.isEmpty
-                ? 'Добавить близкого →'
-                : 'Управлять контактами →')),
-        if (!data.deliveryReady)
-          const Text(
-              'Укажите email аккаунта близкого, чтобы он получил SOS в QORGO.',
-              style: TextStyle(color: QorgoDesign.muted)),
-      ])),
+          style: const TextStyle(
+              fontSize: 14, color: QorgoDesign.muted, height: 1.4)),
+      const SizedBox(height: 24),
       ..._incoming(data),
-      _heading('Нужна помощь?'),
-      SosSlider(
-          enabled: !c.busy && alert == null && data.contacts.isNotEmpty,
-          onActivate: c.activateSos),
+      if (alert != null)
+        _alertCard(alert, expanded: true)
+      else
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+              color: QorgoDesign.soft,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                  color: hasContacts
+                      ? QorgoDesign.danger.withValues(alpha: .22)
+                      : QorgoDesign.border)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            const Text('ЭКСТРЕННАЯ ПОМОЩЬ',
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 1.4,
+                    color: QorgoDesign.muted)),
+            const SizedBox(height: 12),
+            const Text('Нужна помощь?',
+                style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
+                    height: 1.15,
+                    letterSpacing: -.7)),
+            const SizedBox(height: 10),
+            Text(
+                hasContacts
+                    ? 'Создайте SOS для своих близких.'
+                    : 'Для SOS нужен хотя бы один близкий.',
+                style: const TextStyle(
+                    fontSize: 14, height: 1.5, color: QorgoDesign.muted)),
+            const SizedBox(height: 24),
+            if (hasContacts) ...[
+              SosSlider(enabled: !c.busy, onActivate: c.activateSos),
+              const SizedBox(height: 12),
+              const Text('Потяните вправо до конца',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: QorgoDesign.muted)),
+            ] else
+              FilledButton.icon(
+                  onPressed: c.busy ? null : () => editContact(context, c),
+                  icon: const Icon(Icons.person_add_outlined, size: 20),
+                  label: const Text('Добавить близкого')),
+          ]),
+        ),
+      const SizedBox(height: 32),
+      const Text('ВАШ ОБЗОР',
+          style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 1.4,
+              color: QorgoDesign.muted)),
       const SizedBox(height: 12),
-      Text(
-          c.busy
-              ? 'Выполняем действие…'
-              : data.contacts.isEmpty
-                  ? 'Добавьте контакт, чтобы включить SOS'
-                  : 'Потяните вправо до конца, чтобы отправить SOS',
-          textAlign: TextAlign.center),
-      if (alert != null) _alertCard(alert, expanded: true),
-      const SizedBox(height: 20),
-      _card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Моё местоположение',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        const SizedBox(height: 8),
-        Text(c.location == null
-            ? 'Координаты ещё не определены'
-            : '${c.location!.latitude.toStringAsFixed(5)}, ${c.location!.longitude.toStringAsFixed(5)}\nТочность ±${c.location!.accuracy.round()} м • ${timeLabel(c.location!.timestamp)}'),
-        Wrap(spacing: 8, children: [
-          TextButton.icon(
-              onPressed: c.busy ? null : c.updateLocation,
-              icon: const Icon(Icons.my_location),
-              label: const Text('Определить')),
-          if (c.location != null)
-            TextButton.icon(
-                onPressed: c.busy
-                    ? null
-                    : () => _showMap(c.location!, 'Моё местоположение'),
-                icon: const Icon(Icons.map_outlined),
-                label: const Text('На карте')),
-        ]),
-      ])),
+      Card(
+          child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(children: [
+                ListTile(
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    leading: const Icon(Icons.people_outline,
+                        size: 22, color: QorgoDesign.muted),
+                    title: const Text('Круг безопасности',
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w500)),
+                    subtitle: Text(
+                        hasContacts
+                            ? 'Близких: ${data.contacts.length}'
+                            : 'Пока никого',
+                        style: const TextStyle(
+                            fontSize: 12, color: QorgoDesign.muted)),
+                    trailing: const Icon(Icons.chevron_right,
+                        size: 20, color: QorgoDesign.muted),
+                    onTap: () => setState(() => _tab = 1)),
+                const Divider(height: 1, indent: 62, endIndent: 20),
+                ListTile(
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    leading: const Icon(Icons.location_on_outlined,
+                        size: 22, color: QorgoDesign.muted),
+                    title: const Text('Местоположение',
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w500)),
+                    subtitle: Text(
+                        point == null
+                            ? 'Не определено'
+                            : 'Точность ±${point.accuracy.round()} м',
+                        style: const TextStyle(
+                            fontSize: 12, color: QorgoDesign.muted)),
+                    trailing: IconButton(
+                        tooltip: point == null
+                            ? 'Определить местоположение'
+                            : 'Открыть карту',
+                        onPressed: c.busy
+                            ? null
+                            : () {
+                                if (point == null) {
+                                  c.updateLocation();
+                                } else {
+                                  _showMap(point, 'Моё местоположение');
+                                }
+                              },
+                        icon: Icon(
+                            point == null
+                                ? Icons.my_location
+                                : Icons.map_outlined,
+                            size: 20,
+                            color: QorgoDesign.accent)),
+                    onTap: c.busy
+                        ? null
+                        : () {
+                            if (point == null) {
+                              c.updateLocation();
+                            } else {
+                              _showMap(point, 'Моё местоположение');
+                            }
+                          }),
+              ]))),
     ]);
   }
 
@@ -191,6 +264,9 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
                 style:
                     const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             Text(contact.phone),
+            if (contact.inQorgo)
+              const Text('В QORGO',
+                  style: TextStyle(color: QorgoDesign.accent, fontSize: 12)),
             if (contact.email.isNotEmpty) Text(contact.email),
             if (contact.relationship.isNotEmpty) Text(contact.relationship),
             Wrap(spacing: 4, children: [
@@ -295,17 +371,27 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
               style:
                   const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
           Text(data.profile.email),
+          const SizedBox(height: 8),
+          Text(data.profile.phone.isEmpty
+              ? 'Номер телефона не указан'
+              : data.profile.phone),
+          if (data.profile.phone.isEmpty)
+            const Text(
+                'Добавьте свой номер, чтобы близкие могли найти вас в QORGO.',
+                style: TextStyle(color: QorgoDesign.muted, fontSize: 13)),
           TextButton(
               onPressed: c.busy
                   ? null
                   : () async {
-                      final name = await showDialog<String>(
+                      final profile = await showDialog<Profile>(
                           context: context,
                           builder: (_) =>
-                              _NameDialog(initial: data.profile.name));
-                      if (name != null) c.saveProfile(name);
+                              _ProfileDialog(initial: data.profile));
+                      if (profile != null) {
+                        c.saveProfile(profile.name, phone: profile.phone);
+                      }
                     },
-              child: const Text('Изменить имя')),
+              child: const Text('Изменить профиль')),
         ])),
         const SizedBox(height: 20),
         OutlinedButton(
@@ -321,102 +407,134 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
               icon: const Icon(Icons.refresh))
         ]),
         body: SafeArea(
+            bottom: false,
             child: Column(children: [
-          if (c.busy) const LinearProgressIndicator(),
-          if (c.error != null)
-            Material(
-                color: Theme.of(context).colorScheme.errorContainer,
-                child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(children: [
-                      Expanded(child: Text(c.error!)),
-                      TextButton(
-                          onPressed: c.busy ? null : c.refresh,
-                          child: const Text('Обновить'))
-                    ]))),
-          Expanded(
-              child: c.snapshot == null
-                  ? Center(
-                      child: FilledButton(
-                          onPressed: c.busy ? null : c.refresh,
-                          child: const Text('Загрузить данные')))
-                  : RefreshIndicator(
-                      onRefresh: c.refresh,
-                      child: Center(
-                          child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 560),
-                        child: ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.all(20),
-                            children: [
-                              switch (_tab) {
-                                0 => _home(c.snapshot!),
-                                1 => _contacts(c.snapshot!),
-                                2 => _events(c.snapshot!),
-                                _ => _profile(c.snapshot!)
-                              },
-                              const SizedBox(height: 16),
-                              if (c.syncedAt != null)
-                                Text('Обновлено ${timeLabel(c.syncedAt!)}',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        color: QorgoDesign.muted)),
-                            ]),
-                      )))),
-        ])),
-        bottomNavigationBar: NavigationBar(
-            selectedIndex: _tab,
-            onDestinationSelected: (v) => setState(() => _tab = v),
-            destinations: const [
-              NavigationDestination(
-                  icon: Icon(Icons.home_outlined), label: 'Главная'),
-              NavigationDestination(
-                  icon: Icon(Icons.people_outline), label: 'Близкие'),
-              NavigationDestination(
-                  icon: Icon(Icons.history), label: 'События'),
-              NavigationDestination(
-                  icon: Icon(Icons.person_outline), label: 'Профиль'),
-            ]),
+              if (c.busy) const LinearProgressIndicator(),
+              if (c.error != null)
+                Material(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(children: [
+                          Expanded(child: Text(c.error!)),
+                          TextButton(
+                              onPressed: c.busy ? null : c.refresh,
+                              child: const Text('Обновить'))
+                        ]))),
+              Expanded(
+                  child: c.snapshot == null
+                      ? Center(
+                          child: FilledButton(
+                              onPressed: c.busy ? null : c.refresh,
+                              child: const Text('Загрузить данные')))
+                      : RefreshIndicator(
+                          onRefresh: c.refresh,
+                          child: Center(
+                              child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 560),
+                            child: ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                                children: [
+                                  switch (_tab) {
+                                    0 => _home(c.snapshot!),
+                                    1 => _contacts(c.snapshot!),
+                                    2 => _events(c.snapshot!),
+                                    _ => _profile(c.snapshot!)
+                                  },
+                                  const SizedBox(height: 16),
+                                  if (_tab != 0 && c.syncedAt != null)
+                                    Text('Обновлено ${timeLabel(c.syncedAt!)}',
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            color: QorgoDesign.muted)),
+                                ]),
+                          )))),
+            ])),
+        bottomNavigationBar: QorgoBottomNavBar(
+          selectedIndex: _tab,
+          onSelected: (value) => setState(() => _tab = value),
+        ),
       );
 }
 
-class _NameDialog extends StatefulWidget {
-  const _NameDialog({required this.initial});
-  final String initial;
+class _ProfileDialog extends StatefulWidget {
+  const _ProfileDialog({required this.initial});
+  final Profile initial;
   @override
-  State<_NameDialog> createState() => _NameDialogState();
+  State<_ProfileDialog> createState() => _ProfileDialogState();
 }
 
-class _NameDialogState extends State<_NameDialog> {
-  late final TextEditingController _name;
+class _ProfileDialogState extends State<_ProfileDialog> {
+  final _form = GlobalKey<FormState>();
+  late final TextEditingController _name, _phone;
   @override
   void initState() {
     super.initState();
-    _name = TextEditingController(text: widget.initial);
+    _name = TextEditingController(text: widget.initial.name);
+    _phone = TextEditingController(text: widget.initial.phone);
   }
 
   @override
   void dispose() {
     _name.dispose();
+    _phone.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-          title: const Text('Ваше имя'),
-          content:
-              TextField(controller: _name, autofocus: true, maxLength: 100),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Отмена')),
-            FilledButton(
-                onPressed: () {
-                  if (_name.text.trim().isNotEmpty) {
-                    Navigator.pop(context, _name.text.trim());
-                  }
-                },
-                child: const Text('Сохранить')),
-          ]);
+        title: const Text('Мой профиль'),
+        content: SingleChildScrollView(
+            child: Form(
+                key: _form,
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  TextFormField(
+                      controller: _name,
+                      maxLength: 100,
+                      decoration: const InputDecoration(labelText: 'Имя'),
+                      validator: (value) =>
+                          value!.trim().isEmpty ? 'Укажите имя' : null),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                      controller: _phone,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                          labelText: 'Номер телефона',
+                          hintText: '+996700123456',
+                          helperText:
+                              'Близкие смогут найти вас по этому номеру',
+                          helperMaxLines: 2),
+                      validator: (value) {
+                        if (value!.trim().isEmpty) return null;
+                        try {
+                          normalizeContactPhone(value);
+                          return null;
+                        } on QorgoException catch (e) {
+                          return e.message;
+                        }
+                      }),
+                ]))),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Отмена')),
+          FilledButton(
+              onPressed: () {
+                if (_form.currentState!.validate()) {
+                  Navigator.pop(
+                      context,
+                      Profile(
+                          name: _name.text.trim(),
+                          email: widget.initial.email,
+                          phone: _phone.text.trim().isEmpty
+                              ? ''
+                              : normalizeContactPhone(_phone.text)));
+                }
+              },
+              child: const Text('Сохранить')),
+        ],
+      );
 }

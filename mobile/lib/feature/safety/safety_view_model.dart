@@ -87,8 +87,8 @@ class SafetyViewModel extends ViewModel {
       perform(() => SaveContact(repository)(contact));
   Future<bool> deleteContact(Contact contact) =>
       perform(() => repository.deleteContact(contact.id!));
-  Future<bool> saveProfile(String name) =>
-      perform(() => repository.saveProfile(name.trim()));
+  Future<bool> saveProfile(String name, {String? phone}) =>
+      perform(() => repository.saveProfile(name.trim(), phone: phone));
   Future<bool> updateLocation() => perform(() async {
         location = await device.locate();
       }, reload: false);

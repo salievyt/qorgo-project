@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities.dart';
+import '../../domain/use_cases.dart';
+import '../../core/design/qorgo_theme.dart';
+import '../contacts/contact_lookup_view_model.dart';
 import '../app/app_view_model.dart';
 
 Future<void> editContact(BuildContext context, AppViewModel controller,
@@ -21,23 +24,60 @@ class ContactForm extends StatefulWidget {
 class _ContactFormState extends State<ContactForm> {
   final _form = GlobalKey<FormState>();
   late final TextEditingController _name, _phone, _email, _relationship;
+  late final ContactLookupViewModel _lookup;
   bool _saving = false;
   String? _error;
   @override
   void initState() {
     super.initState();
+    _lookup = widget.controller.createContactLookup()
+      ..addListener(_lookupChanged);
     _name = TextEditingController(text: widget.contact?.name);
     _phone = TextEditingController(text: widget.contact?.phone ?? '+996');
     _email = TextEditingController(text: widget.contact?.email);
     _relationship = TextEditingController(text: widget.contact?.relationship);
   }
 
+  void _lookupChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    _lookup.removeListener(_lookupChanged);
+    _lookup.dispose();
     for (final c in [_name, _phone, _email, _relationship]) {
       c.dispose();
     }
     super.dispose();
+  }
+
+  Future<void> _pickContact() async {
+    final picked = await _lookup.pick();
+    if (!mounted || picked == null) return;
+    _phone.text = picked.phone;
+    _name.text =
+        picked.name.isNotEmpty ? picked.name : (_lookup.match?.name ?? '');
+    _email.clear();
+  }
+
+  Future<void> _searchContact() async {
+    await _lookup.search(_phone.text);
+    if (!mounted) return;
+    final match = _lookup.match;
+    if (match != null) {
+      _phone.text = match.phone;
+      if (_name.text.trim().isEmpty) _name.text = match.name;
+    }
+  }
+
+  String? _validatePhone(String? value) {
+    try {
+      normalizeContactPhone(value ?? '');
+      return null;
+    } on QorgoException catch (e) {
+      return e.message;
+    }
   }
 
   @override
@@ -57,7 +97,15 @@ class _ContactFormState extends State<ContactForm> {
                               : 'Изменить контакт',
                           style: const TextStyle(
                               fontSize: 22, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
+                      if (widget.contact == null) ...[
+                        OutlinedButton.icon(
+                            onPressed:
+                                _saving || _lookup.busy ? null : _pickContact,
+                            icon: const Icon(Icons.contacts_outlined),
+                            label: const Text('Выбрать из контактов')),
+                        const SizedBox(height: 16),
+                      ],
                       TextFormField(
                           controller: _name,
                           decoration: const InputDecoration(labelText: 'Имя'),
@@ -69,21 +117,71 @@ class _ContactFormState extends State<ContactForm> {
                           keyboardType: TextInputType.phone,
                           decoration: const InputDecoration(
                               labelText: 'Телефон с кодом страны'),
-                          validator: (v) => RegExp(r'^\+[1-9]\d{7,14}$')
-                                  .hasMatch(
-                                      v!.replaceAll(RegExp(r'[\s()\-]'), ''))
-                              ? null
-                              : 'Например +996700123456'),
+                          onChanged: (_) => _lookup.clear(),
+                          validator: _validatePhone),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                          onPressed:
+                              _saving || _lookup.busy ? null : _searchContact,
+                          icon: _lookup.busy
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.search),
+                          label: Text(_lookup.busy
+                              ? 'Проверяем номер…'
+                              : 'Найти в QORGO')),
+                      if (_lookup.match != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                                color: QorgoDesign.soft,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: QorgoDesign.border)),
+                            child: Row(children: [
+                              const Icon(Icons.check_circle_outline,
+                                  color: QorgoDesign.accent),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                  child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                    Text(_lookup.match!.name,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600)),
+                                    Text(
+                                        _lookup.match!.alreadyAdded
+                                            ? 'Уже в ваших близких'
+                                            : 'Есть в QORGO — можно сразу добавить',
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            color: QorgoDesign.muted)),
+                                  ])),
+                            ])),
+                      ] else if (_lookup.searched)
+                        const Text(
+                            'Этот номер пока не зарегистрирован в QORGO. Можно сохранить для звонка и SMS.',
+                            style: TextStyle(
+                                fontSize: 13, color: QorgoDesign.muted)),
+                      if (_lookup.error != null)
+                        Text(_lookup.error!,
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.error)),
                       const SizedBox(height: 12),
-                      TextFormField(
-                          controller: _email,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                              labelText: 'Email аккаунта близкого в QORGO'),
-                          validator: (v) => v!.trim().isEmpty ||
-                                  RegExp(r'^\S+@\S+\.\S+$').hasMatch(v.trim())
-                              ? null
-                              : 'Проверьте email'),
+                      if (_lookup.match == null)
+                        TextFormField(
+                            controller: _email,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: const InputDecoration(
+                                labelText: 'Email аккаунта близкого в QORGO'),
+                            validator: (v) => v!.trim().isEmpty ||
+                                    RegExp(r'^\S+@\S+\.\S+$').hasMatch(v.trim())
+                                ? null
+                                : 'Проверьте email'),
                       const SizedBox(height: 12),
                       TextFormField(
                           controller: _relationship,
@@ -95,7 +193,10 @@ class _ContactFormState extends State<ContactForm> {
                             style: TextStyle(
                                 color: Theme.of(context).colorScheme.error)),
                       FilledButton(
-                          onPressed: _saving
+                          onPressed: _saving ||
+                                  _lookup.busy ||
+                                  (_lookup.match?.alreadyAdded == true &&
+                                      widget.contact == null)
                               ? null
                               : () async {
                                   if (!_form.currentState!.validate()) return;
@@ -109,7 +210,9 @@ class _ContactFormState extends State<ContactForm> {
                                           name: _name.text,
                                           phone: _phone.text,
                                           email: _email.text,
-                                          relationship: _relationship.text));
+                                          relationship: _relationship.text,
+                                          linkRegistered:
+                                              _lookup.match != null));
                                   if (!context.mounted) return;
                                   if (ok) {
                                     Navigator.pop(context);
@@ -120,7 +223,11 @@ class _ContactFormState extends State<ContactForm> {
                                     });
                                   }
                                 },
-                          child: Text(_saving ? 'Сохраняем…' : 'Сохранить')),
+                          child: Text(_saving
+                              ? 'Сохраняем…'
+                              : _lookup.match != null && widget.contact == null
+                                  ? 'Добавить в близкие'
+                                  : 'Сохранить')),
                     ]))),
       );
 }

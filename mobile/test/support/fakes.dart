@@ -16,7 +16,9 @@ class FakeRepository implements SafetyRepository {
         id: contacts.length + 1,
         name: contact.name,
         phone: contact.phone,
-        email: contact.email));
+        email: contact.email,
+        inQorgo: contact.linkRegistered,
+        linkRegistered: contact.linkRegistered));
   }
 
   @override

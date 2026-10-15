@@ -4,14 +4,17 @@ class Contact {
       required this.name,
       required this.phone,
       this.email = '',
-      this.relationship = ''});
+      this.relationship = '',
+      this.inQorgo = false,
+      this.linkRegistered = false});
+  final bool inQorgo, linkRegistered;
   final int? id;
   final String name, phone, email, relationship;
 }
 
 class Profile {
-  const Profile({required this.name, required this.email});
-  final String name, email;
+  const Profile({required this.name, required this.email, this.phone = ''});
+  final String name, email, phone;
 }
 
 class GeoPoint {
@@ -120,4 +123,16 @@ class IncomingAlert {
   final String senderName;
   final bool acknowledged;
   final SafetyAlert alert;
+}
+
+class RegisteredContactMatch {
+  const RegisteredContactMatch(
+      {required this.name, required this.phone, required this.alreadyAdded});
+  final String name, phone;
+  final bool alreadyAdded;
+}
+
+class DeviceContact {
+  const DeviceContact(this.name, this.phone);
+  final String name, phone;
 }

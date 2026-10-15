@@ -1,6 +1,7 @@
 import 'entities.dart';
 
 abstract interface class SafetyRepository {
+  Future<RegisteredContactMatch?> findRegisteredContact(String phone);
   Future<void> acknowledge(int deliveryId);
   Future<bool> restoreSession();
   Future<void> signIn(String email, String password, {String? name});
@@ -8,7 +9,7 @@ abstract interface class SafetyRepository {
   Future<Snapshot> load();
   Future<void> saveContact(Contact contact);
   Future<void> deleteContact(int id);
-  Future<void> saveProfile(String name);
+  Future<void> saveProfile(String name, {String? phone});
   Future<SafetyAlert> activateSos(GeoPoint? location);
   Future<void> resolveAlert(int id);
   Future<void> retryAlert(int id);
@@ -17,6 +18,7 @@ abstract interface class SafetyRepository {
 }
 
 abstract interface class DeviceGateway {
+  Future<DeviceContact?> pickContact();
   Future<GeoPoint> locate();
   Future<void> openMap(GeoPoint point);
   Future<void> call(String phone);

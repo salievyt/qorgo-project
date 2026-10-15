@@ -52,7 +52,8 @@ void main() {
             email: receiverEmail)),
         true,
         reason: vm.error);
-    await tester.pumpWidget(QorgoApp(controller: vm));
+    await tester
+        .pumpWidget(QorgoApp(controller: vm, splashDuration: Duration.zero));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byType(SosSlider));
     await tester.drag(find.byKey(const Key('sos-thumb')), const Offset(500, 0));

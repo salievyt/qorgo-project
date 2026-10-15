@@ -34,7 +34,7 @@ class _SosSliderState extends State<SosSlider> {
             child: Container(
               height: 80,
               decoration: BoxDecoration(
-                color: widget.enabled ? QorgoDesign.danger : Colors.grey,
+                color: widget.enabled ? QorgoDesign.danger : QorgoDesign.soft,
                 borderRadius: BorderRadius.circular(40),
               ),
               child: Stack(

@@ -14,7 +14,8 @@ void main() {
     final repository = FakeRepository();
     final controller = AppViewModel(repository, FakeDevice());
     await controller.initialize();
-    await tester.pumpWidget(QorgoApp(controller: controller));
+    await tester.pumpWidget(
+        QorgoApp(controller: controller, splashDuration: Duration.zero));
     expect(find.text('Нужна помощь?'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('Близкие'));
@@ -38,7 +39,8 @@ void main() {
     final repository = FakeRepository()..authenticated = false;
     final controller = AppViewModel(repository, FakeDevice());
     await controller.initialize();
-    await tester.pumpWidget(QorgoApp(controller: controller));
+    await tester.pumpWidget(
+        QorgoApp(controller: controller, splashDuration: Duration.zero));
     expect(find.text('Создать аккаунт'), findsOneWidget);
     expect(find.text('ДЕМО'), findsNothing);
     await tester.pumpWidget(const SizedBox());

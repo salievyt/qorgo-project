@@ -2,28 +2,32 @@ import 'package:flutter/material.dart';
 
 /// Tokens copied from landing/src/styles.css; sizes adapted for touch screens.
 abstract final class QorgoDesign {
+  static const accent = Color(0xFFA0CEAE);
   static const green = Color(0xFF235D3B);
-  static const ink = Color(0xFF080B09);
-  static const muted = Color(0xFF5E6470);
-  static const background = Color(0xFFEEF0F4);
-  static const soft = Color(0xFFF6F7F9);
-  static const border = Color(0xFFE0E4E8);
+  static const ink = Color(0xFFF2F7F3);
+  static const muted = Color(0xFF8CAA97);
+  static const background = Color(0xFF030705);
+  static const soft = Color(0xFF111513);
+  static const border = Color(0xFF254331);
   static const danger = Color(0xFFD34C43);
 
   static ThemeData get theme {
-    final scheme = ColorScheme.fromSeed(seedColor: green).copyWith(
-      primary: green,
+    final scheme =
+        ColorScheme.fromSeed(seedColor: green, brightness: Brightness.dark)
+            .copyWith(
+      primary: accent,
       onPrimary: Colors.white,
-      surface: Colors.white,
+      surface: soft,
       onSurface: ink,
       onSurfaceVariant: muted,
       error: danger,
       outline: border,
-      secondary: green,
+      secondary: accent,
       surfaceTint: Colors.transparent,
     );
     final base = ThemeData(
         useMaterial3: true,
+        brightness: Brightness.dark,
         fontFamily: 'Onest',
         fontFamilyFallback: const ['OnestCyrillic'],
         colorScheme: scheme);
@@ -45,7 +49,7 @@ abstract final class QorgoDesign {
               fontWeight: FontWeight.w500,
               letterSpacing: -1.2)),
       cardTheme: CardThemeData(
-          color: Colors.white,
+          color: soft,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           margin: const EdgeInsets.only(bottom: 12),
@@ -53,7 +57,7 @@ abstract final class QorgoDesign {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(24))),
       inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Colors.white,
+          fillColor: soft,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           labelStyle: const TextStyle(color: muted, fontSize: 14),
@@ -65,7 +69,7 @@ abstract final class QorgoDesign {
               borderSide: const BorderSide(color: border)),
           focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: green, width: 1.5))),
+              borderSide: const BorderSide(color: accent, width: 1.5))),
       filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
               backgroundColor: green,
@@ -86,7 +90,7 @@ abstract final class QorgoDesign {
               side: const BorderSide(color: border))),
       textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
-              foregroundColor: green,
+              foregroundColor: accent,
               shape: shape,
               textStyle: const TextStyle(
                   fontFamily: 'Onest',
@@ -94,16 +98,16 @@ abstract final class QorgoDesign {
                   fontSize: 14,
                   fontWeight: FontWeight.w600))),
       navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: Colors.white,
+          backgroundColor: soft,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           height: 72,
-          indicatorColor: const Color(0xFFEAF2ED),
+          indicatorColor: const Color(0xFF205138),
           labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
               fontFamily: 'Onest',
               fontFamilyFallback: const ['OnestCyrillic'],
               fontSize: 11,
-              color: states.contains(WidgetState.selected) ? green : muted,
+              color: states.contains(WidgetState.selected) ? accent : muted,
               fontWeight: states.contains(WidgetState.selected)
                   ? FontWeight.w600
                   : FontWeight.w400))),
@@ -114,7 +118,7 @@ abstract final class QorgoDesign {
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)))),
       dialogTheme: DialogThemeData(
-          backgroundColor: Colors.white,
+          backgroundColor: soft,
           surfaceTintColor: Colors.transparent,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(24))),

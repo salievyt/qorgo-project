@@ -19,7 +19,8 @@ void main() {
     final controller = AppViewModel(repository, NativeDeviceGateway());
     await controller.initialize();
     if (controller.signedIn) await controller.logout();
-    await tester.pumpWidget(QorgoApp(controller: controller));
+    await tester.pumpWidget(
+        QorgoApp(controller: controller, splashDuration: Duration.zero));
     final email =
         'integration-${DateTime.now().microsecondsSinceEpoch}@example.invalid';
     final fields = find.byType(TextFormField);

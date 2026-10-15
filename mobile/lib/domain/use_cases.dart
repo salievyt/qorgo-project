@@ -8,7 +8,7 @@ class SaveContact {
     if (contact.name.trim().isEmpty) {
       throw const QorgoException('Укажите имя контакта.');
     }
-    final phone = contact.phone.replaceAll(RegExp(r'[\s()\-]'), '');
+    final phone = normalizeContactPhone(contact.phone);
     if (!RegExp(r'^\+[1-9]\d{7,14}$').hasMatch(phone)) {
       throw const QorgoException('Номер должен начинаться с + и кода страны.');
     }
@@ -17,7 +17,8 @@ class SaveContact {
         name: contact.name.trim(),
         phone: phone,
         email: contact.email.trim(),
-        relationship: contact.relationship.trim()));
+        relationship: contact.relationship.trim(),
+        linkRegistered: contact.linkRegistered));
   }
 }
 
@@ -44,4 +45,26 @@ class ActivateSos {
     }
     return repository.activateSos(point);
   }
+}
+
+String normalizeContactPhone(String value) {
+  var phone = value.trim().replaceAll(RegExp(r'[\s()\-]'), '');
+  if (phone.startsWith('00')) phone = '+${phone.substring(2)}';
+  if (RegExp(r'^0[57]\d{8}$').hasMatch(phone)) {
+    phone = '+996${phone.substring(1)}';
+  }
+  if (RegExp(r'^[57]\d{8}$').hasMatch(phone)) phone = '+996$phone';
+  if (RegExp(r'^996\d{9}$').hasMatch(phone)) phone = '+$phone';
+  if (!RegExp(r'^\+[1-9]\d{7,14}$').hasMatch(phone)) {
+    throw const QorgoException(
+        'Укажите международный номер, например +996700123456.');
+  }
+  return phone;
+}
+
+class FindRegisteredContact {
+  const FindRegisteredContact(this.repository);
+  final SafetyRepository repository;
+  Future<RegisteredContactMatch?> call(String phone) =>
+      repository.findRegisteredContact(normalizeContactPhone(phone));
 }

@@ -11,7 +11,7 @@ class QorgoBrand extends StatelessWidget {
         mainAxisAlignment:
             center ? MainAxisAlignment.center : MainAxisAlignment.start,
         children: [
-          SvgPicture.asset('assets/brand/qorgo-dark.svg',
+          SvgPicture.asset('assets/brand/qorgo-light.svg',
               width: size * 1.1, height: size * 1.3),
           const SizedBox(width: 2),
           Text('QORGO',

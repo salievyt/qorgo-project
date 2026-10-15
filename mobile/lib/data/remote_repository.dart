@@ -52,14 +52,18 @@ class RemoteSafetyRepository implements SafetyRepository {
       api.request('GET', 'inbox/'),
     ]);
     return Snapshot(
-        Profile(name: result[0]['name'], email: result[0]['email']),
+        Profile(
+            name: result[0]['name'],
+            email: result[0]['email'],
+            phone: result[0]['phone_number'] ?? ''),
         (result[1] as List)
             .map((v) => Contact(
                 id: v['id'],
                 name: v['name'],
                 phone: v['phone'],
                 email: v['email'],
-                relationship: v['relationship']))
+                relationship: v['relationship'],
+                inQorgo: v['in_qorgo'] == true))
             .toList(),
         (result[3] as List).map((v) => _alert(v)).toList(),
         (result[2] as List)
@@ -81,6 +85,17 @@ class RemoteSafetyRepository implements SafetyRepository {
   }
 
   @override
+  Future<RegisteredContactMatch?> findRegisteredContact(String phone) async {
+    final data =
+        await api.request('POST', 'contacts/lookup/', {'phone': phone});
+    if (data['registered'] != true) return null;
+    return RegisteredContactMatch(
+        name: data['name'],
+        phone: data['phone'],
+        alreadyAdded: data['already_added'] == true);
+  }
+
+  @override
   Future<void> acknowledge(int deliveryId) async =>
       api.request('POST', 'inbox/$deliveryId/acknowledge/');
 
@@ -91,14 +106,17 @@ class RemoteSafetyRepository implements SafetyRepository {
         'name': contact.name,
         'phone': contact.phone,
         'email': contact.email,
-        'relationship': contact.relationship
+        'relationship': contact.relationship,
+        'link_registered': contact.linkRegistered
       });
   @override
   Future<void> deleteContact(int id) async =>
       api.request('DELETE', 'contacts/$id/');
   @override
-  Future<void> saveProfile(String name) async =>
-      api.request('PATCH', 'profile/', {'name': name});
+  Future<void> saveProfile(String name, {String? phone}) async => api.request(
+      'PATCH',
+      'profile/',
+      {'name': name, if (phone != null) 'phone_number': phone});
   @override
   Future<SafetyAlert> activateSos(GeoPoint? location) async {
     _pendingId ??= await storage.read(key: _pendingKey) ?? const Uuid().v4();
