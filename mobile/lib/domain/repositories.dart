@@ -16,6 +16,8 @@ abstract interface class SafetyRepository {
   Future<void> startJourney(String destination, DateTime deadline);
   Future<void> finishJourney(int id, {required bool arrived});
   Future<void> recordLocation(GeoPoint point, {required bool background});
+  Future<bool> operatorLocationSharingEnabled();
+  Future<void> setOperatorLocationSharing(bool enabled);
 }
 
 abstract interface class DeviceGateway {

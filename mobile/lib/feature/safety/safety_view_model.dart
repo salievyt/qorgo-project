@@ -15,7 +15,7 @@ class SafetyViewModel extends ViewModel {
   DateTime? syncedAt;
   Timer? _poller;
   StreamSubscription<GeoPoint>? _tracking;
-  bool continuousProtection = true;
+  bool continuousProtection = false;
   DateTime? lastLocationSent;
   bool _refreshing = false;
   int _revision = 0;
@@ -35,8 +35,11 @@ class SafetyViewModel extends ViewModel {
     try {
       _tracking = device.trackLocation().listen((point) async {
         final moving = point.accuracy <= 100;
-        final interval =
-            moving ? const Duration(seconds: 45) : const Duration(minutes: 10);
+        final interval = activeAlert != null
+            ? const Duration(seconds: 5)
+            : moving
+                ? const Duration(seconds: 45)
+                : const Duration(minutes: 10);
         if (lastLocationSent == null ||
             DateTime.now().difference(lastLocationSent!) >= interval) {
           await repository.recordLocation(point, background: true);
@@ -52,12 +55,21 @@ class SafetyViewModel extends ViewModel {
   }
 
   Future<void> setContinuousProtection(bool enabled) async {
-    continuousProtection = enabled;
     if (!enabled) {
+      continuousProtection = false;
       await _tracking?.cancel();
       _tracking = null;
-    } else {
-      await startContinuousProtection();
+      notifyState();
+    }
+    try {
+      await repository.setOperatorLocationSharing(enabled);
+      continuousProtection = enabled;
+      if (enabled) {
+        lastLocationSent = null;
+        await startContinuousProtection();
+      }
+    } catch (e) {
+      _recordError(e);
     }
     notifyState();
   }
@@ -133,10 +145,15 @@ class SafetyViewModel extends ViewModel {
         try {
           current = await device.locate();
           location = current;
+          try {
+            await repository.recordLocation(current, background: false);
+          } catch (_) {
+            // The SOS request itself must still be sent if a location sync fails.
+          }
         } catch (_) {
           current = null;
         }
-        await ActivateSos(repository)(current, snapshot?.contacts ?? []);
+        await ActivateSos(repository)(current);
       });
   Future<bool> resolveAlert(int id) =>
       perform(() => repository.resolveAlert(id));

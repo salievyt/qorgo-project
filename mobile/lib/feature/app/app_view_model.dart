@@ -24,6 +24,13 @@ class AppViewModel extends SafetyViewModel {
     await perform(() async {
       await auth.restore();
       signedIn = auth.signedIn;
+      if (signedIn) {
+        try {
+          continuousProtection = await repository.operatorLocationSharingEnabled();
+        } catch (_) {
+          continuousProtection = false;
+        }
+      }
     });
     initialized = true;
     startPolling();
@@ -34,6 +41,7 @@ class AppViewModel extends SafetyViewModel {
       perform(() async {
         await auth.authenticate(email, password, name: name);
         signedIn = auth.signedIn;
+        continuousProtection = await repository.operatorLocationSharingEnabled();
       });
 
   Future<void> logout() async {

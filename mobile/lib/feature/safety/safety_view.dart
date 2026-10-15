@@ -28,13 +28,21 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
   static const _sosChannel = MethodChannel('qorgo/sos');
   int _tab = 0;
   bool _protectionExplained = false;
+  bool _explainingProtection = false;
   AppViewModel get c => widget.controller;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.sosShortcut?.addListener(_openSosShortcut);
+    c.addListener(_onControllerChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _explainProtection());
+  }
+
+  void _onControllerChanged() {
+    if (c.signedIn && !_protectionExplained) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _explainProtection());
+    }
   }
 
   void _openSosShortcut() {
@@ -46,7 +54,7 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
           builder: (context) => AlertDialog(
                 title: const Text('Отправить SOS?'),
                 content: const Text(
-                    'QORGO передаст вашим близким вашу последнюю доступную геопозицию.'),
+                    'QORGO отправит SOS вашим близким и диспетчерской. Если геопозиция доступна, она будет приложена к сигналу.'),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(context, false),
@@ -84,8 +92,21 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
   }
 
   Future<void> _explainProtection() async {
-    if (!mounted || _protectionExplained || !c.continuousProtection) return;
-    if (!await c.shouldExplainProtection() || !mounted) return;
+    if (!mounted ||
+        _protectionExplained ||
+        _explainingProtection ||
+        !c.signedIn) {
+      return;
+    }
+    _explainingProtection = true;
+    if (!await c.shouldExplainProtection() || !mounted) {
+      _protectionExplained = true;
+      _explainingProtection = false;
+      if (mounted && c.continuousProtection) {
+        await c.startContinuousProtection();
+      }
+      return;
+    }
     _protectionExplained = true;
     final enabled = await showDialog<bool>(
         context: context,
@@ -93,7 +114,7 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
         builder: (context) => AlertDialog(
               title: const Text('Непрерывная защита'),
               content: const Text(
-                  'QORGO будет передавать местоположение для безопасности: примерно раз в 30–60 секунд в движении и раз в 5–15 минут без движения. Во время SOS — чаще. Данные доступны доверенным близким и оператору только при активной тревоге, а история хранится 30 дней.'),
+                  'При включённой непрерывной защите QORGO передаёт вашу геопозицию: примерно раз в 30–60 секунд в движении и раз в 5–15 минут без движения. Авторизованные операторы диспетчерской смогут видеть актуальную точку, пока защита включена. Во время SOS координаты передаются независимо от этой настройки. Отключить показ оператору можно в профиле; история хранится до 30 дней.'),
               actions: [
                 TextButton(
                     onPressed: () => Navigator.pop(context, false),
@@ -104,13 +125,14 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
               ],
             ));
     await c.markProtectionExplained();
-    if (enabled == true) await c.startContinuousProtection();
+    if (enabled == true) await c.setContinuousProtection(true);
     if (enabled == false) await c.setContinuousProtection(false);
   }
 
   @override
   void dispose() {
     widget.sosShortcut?.removeListener(_openSosShortcut);
+    c.removeListener(_onControllerChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -176,22 +198,16 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
             const SizedBox(height: 10),
             Text(
                 hasContacts
-                    ? 'Создайте SOS для своих близких.'
-                    : 'Для SOS нужен хотя бы один близкий.',
+                    ? 'Сигнал SOS получат ваши близкие и диспетчерская QORGO.'
+                    : 'Диспетчерская QORGO получит сигнал SOS. Добавьте близких, чтобы они тоже получили оповещение.',
                 style: const TextStyle(
                     fontSize: 14, height: 1.5, color: QorgoDesign.muted)),
             const SizedBox(height: 24),
-            if (hasContacts) ...[
-              SosSlider(enabled: !c.busy, onActivate: c.activateSos),
-              const SizedBox(height: 12),
-              const Text('Потяните вправо до конца',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: QorgoDesign.muted)),
-            ] else
-              FilledButton.icon(
-                  onPressed: c.busy ? null : () => editContact(context, c),
-                  icon: const Icon(Icons.person_add_outlined, size: 20),
-                  label: const Text('Добавить близкого')),
+            SosSlider(enabled: !c.busy, onActivate: c.activateSos),
+            const SizedBox(height: 12),
+            const Text('Потяните вправо до конца',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: QorgoDesign.muted)),
           ]),
         ),
       const SizedBox(height: 32),
@@ -480,7 +496,7 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
               ? (c.lastLocationSent == null
                   ? 'Ожидаем разрешение геолокации'
                   : 'Активна · последнее обновление ${timeLabel(c.lastLocationSent!)}')
-              : 'Приостановлена. SOS продолжит запрашивать координаты.'),
+              : 'Показ оператору выключен. SOS всё равно передаёт координаты.'),
           value: c.continuousProtection,
           onChanged: c.busy ? null : c.setContinuousProtection,
         )),

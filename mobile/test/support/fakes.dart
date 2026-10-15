@@ -2,6 +2,13 @@ import 'package:qorgo/domain/entities.dart';
 import 'package:qorgo/domain/repositories.dart';
 
 class FakeRepository implements SafetyRepository {
+  bool operatorSharing = false;
+  @override
+  Future<bool> operatorLocationSharingEnabled() async => operatorSharing;
+  @override
+  Future<void> setOperatorLocationSharing(bool enabled) async {
+    operatorSharing = enabled;
+  }
   bool authenticated = true;
   Profile profile = const Profile(name: 'Тест', email: 'test@example.invalid');
   final contacts = <Contact>[];

@@ -158,6 +158,13 @@ class RemoteSafetyRepository implements SafetyRepository {
         'accuracy': point.accuracy,
         'is_background': background,
       });
+  @override
+  Future<bool> operatorLocationSharingEnabled() async =>
+      (await api.request('GET', 'location/operator-sharing/'))['enabled'] == true;
+  @override
+  Future<void> setOperatorLocationSharing(bool enabled) async {
+    await api.request('POST', 'location/operator-sharing/', {'enabled': enabled});
+  }
   SafetyAlert _alert(Map<String, dynamic> value) => SafetyAlert(
         id: value['id'],
         createdAt: DateTime.parse(value['created_at']),

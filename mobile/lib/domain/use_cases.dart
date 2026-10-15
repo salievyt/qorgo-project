@@ -39,12 +39,7 @@ class StartJourney {
 class ActivateSos {
   const ActivateSos(this.repository);
   final SafetyRepository repository;
-  Future<SafetyAlert> call(GeoPoint? point, List<Contact> contacts) {
-    if (contacts.isEmpty) {
-      throw const QorgoException('Сначала добавьте доверенный контакт.');
-    }
-    return repository.activateSos(point);
-  }
+  Future<SafetyAlert> call(GeoPoint? point) => repository.activateSos(point);
 }
 
 String normalizeContactPhone(String value) {
