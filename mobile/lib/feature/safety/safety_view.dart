@@ -1,4 +1,5 @@
 import '../../core/design/qorgo_brand.dart';
+import 'package:flutter/foundation.dart';
 import '../../core/widgets/bottom_nav_bar.dart';
 import '../../core/design/qorgo_theme.dart';
 import 'package:flutter/material.dart';
@@ -15,8 +16,9 @@ String timeLabel(DateTime value) {
 }
 
 class SafetyView extends StatefulWidget {
-  const SafetyView({super.key, required this.controller});
+  const SafetyView({super.key, required this.controller, this.sosShortcut});
   final AppViewModel controller;
+  final ValueListenable<int>? sosShortcut;
   @override
   State<SafetyView> createState() => _SafetyViewState();
 }
@@ -29,7 +31,31 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    widget.sosShortcut?.addListener(_openSosShortcut);
     WidgetsBinding.instance.addPostFrameCallback((_) => _explainProtection());
+  }
+
+  void _openSosShortcut() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || c.busy) return;
+      final send = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: const Text('Отправить SOS?'),
+                content: const Text(
+                    'QORGO передаст вашим близким вашу последнюю доступную геопозицию.'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Отмена')),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Отправить SOS'))
+                ],
+              ));
+      if (send == true) await c.activateSos();
+    });
   }
 
   Future<void> _explainProtection() async {
@@ -59,6 +85,7 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    widget.sosShortcut?.removeListener(_openSosShortcut);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -431,6 +458,12 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
               : 'Приостановлена. SOS продолжит запрашивать координаты.'),
           value: c.continuousProtection,
           onChanged: c.busy ? null : c.setContinuousProtection,
+        )),
+        _card(const ListTile(
+          leading: Icon(Icons.lock_outline, color: QorgoDesign.accent),
+          title: Text('SOS на экране блокировки'),
+          subtitle: Text(
+              'Android: добавьте плитку «QORGO SOS» в быстрые настройки телефона. Нажатие откроет подтверждение SOS.'),
         )),
         const Text(
             'Координаты хранятся до 30 дней. Отключить защиту можно в любой момент.',

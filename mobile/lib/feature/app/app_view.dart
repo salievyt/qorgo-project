@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'splash_view.dart';
 import '../../core/design/qorgo_theme.dart';
@@ -10,9 +11,11 @@ class QorgoApp extends StatefulWidget {
   const QorgoApp(
       {super.key,
       required this.controller,
+      this.sosShortcut,
       this.splashDuration = const Duration(milliseconds: 1200)});
   final AppViewModel controller;
   final Duration splashDuration;
+  final ValueListenable<int>? sosShortcut;
   @override
   State<QorgoApp> createState() => _QorgoAppState();
 }
@@ -50,7 +53,8 @@ class _QorgoAppState extends State<QorgoApp> {
                 return const SplashView();
               }
               return controller.signedIn
-                  ? SafetyView(controller: controller)
+                  ? SafetyView(
+                      controller: controller, sosShortcut: widget.sosShortcut)
                   : AuthScreen(controller: controller);
             }),
       );

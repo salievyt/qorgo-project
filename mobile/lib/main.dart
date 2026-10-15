@@ -24,6 +24,10 @@ Future<void> main() async {
         ApiClient(Environment.apiUrl), const FlutterSecureStorage()),
     NativeDeviceGateway(),
   );
-  runApp(QorgoApp(controller: controller));
+  final sosShortcut = ValueNotifier<int>(0);
+  const MethodChannel('qorgo/sos').setMethodCallHandler((call) async {
+    if (call.method == 'openSos') sosShortcut.value++;
+  });
+  runApp(QorgoApp(controller: controller, sosShortcut: sosShortcut));
   await controller.initialize();
 }
