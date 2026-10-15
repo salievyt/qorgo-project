@@ -47,6 +47,7 @@ class AppViewModel extends SafetyViewModel {
   Future<void> logout() async {
     await perform(() async {
       try {
+        await setContinuousProtection(false);
         await auth.logout();
       } finally {
         signedIn = false;
