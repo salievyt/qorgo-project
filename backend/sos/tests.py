@@ -4,6 +4,8 @@ Tests for sos app — Alert creation, resolution, evidence recording.
 import pytest
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import RefreshToken
 from sos.models import Alert, EvidenceRecording
 
 
@@ -157,3 +159,31 @@ class TestAlertAPI:
         response = auth_client.get(detail_url)
         assert response.status_code == status.HTTP_200_OK
         assert response.data['id'] == str(alert.id)
+
+
+class TestOperatorIncidentAPI:
+    def _operator_client(self, user):
+        user.role = 'emergency_operator'
+        user.save(update_fields=['role'])
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {RefreshToken.for_user(user).access_token}')
+        return client
+
+    def test_operator_can_take_and_close_an_incident(self, user, second_user):
+        alert = Alert.objects.create(user=second_user, latitude=42.87, longitude=74.59)
+        client = self._operator_client(user)
+        listed = client.get('/api/v1/operator/incidents/')
+        assert listed.status_code == status.HTTP_200_OK
+        assert listed.data['results'][0]['id'] == str(alert.id)
+        taken = client.post(f'/api/v1/operator/incidents/{alert.id}/take/')
+        assert taken.status_code == status.HTTP_200_OK
+        assert str(taken.data['assigned_operator']) == str(user.id)
+        closed = client.post(f'/api/v1/operator/incidents/{alert.id}/close/', {
+            'status': 'resolved', 'note': 'Связались с заявителем.'}, format='json')
+        assert closed.status_code == status.HTTP_200_OK
+        alert.refresh_from_db()
+        assert alert.status == Alert.Status.RESOLVED
+        assert alert.operator_note == 'Связались с заявителем.'
+
+    def test_regular_user_cannot_read_operator_queue(self, auth_client):
+        assert auth_client.get('/api/v1/operator/incidents/').status_code == status.HTTP_403_FORBIDDEN

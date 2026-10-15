@@ -38,6 +38,12 @@ class Alert(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='resolved_alerts', verbose_name=_('Resolved by'),
     )
+    assigned_operator = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='assigned_incidents', verbose_name=_('Assigned operator'),
+    )
+    assigned_at = models.DateTimeField(blank=True, null=True, verbose_name=_('Assigned at'))
+    operator_note = models.TextField(blank=True, verbose_name=_('Operator note'))
     notified_contacts = models.JSONField(default=list, blank=True, verbose_name=_('Notified contacts'))
     family_notified = models.BooleanField(default=False, verbose_name=_('Family notified'))
     emergency_services_notified = models.BooleanField(default=False, verbose_name=_('Emergency services notified'))

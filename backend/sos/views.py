@@ -8,11 +8,13 @@ from drf_spectacular.utils import inline_serializer, extend_schema
 from .models import Alert, EvidenceRecording
 from .serializers import (
     AlertSerializer, AlertListSerializer, CreateAlertSerializer,
-    ResolveAlertSerializer, EvidenceSerializer,
+    ResolveAlertSerializer, EvidenceSerializer, OperatorIncidentSerializer,
+    OperatorIncidentUpdateSerializer,
 )
 from common.services import generate_map_link
 from families.models import FamilyMembership
 from notifications.services import send_sos_alert_to_contacts, notify_family_members
+from common.permissions import IsEmergencyOperator
 
 
 @extend_schema(summary='Create SOS alert', tags=['SOS'])
@@ -140,3 +142,67 @@ class AlertEvidenceListView(generics.ListAPIView):
             alert_id=self.kwargs['alert_id'],
             alert__user=self.request.user,
         )
+
+
+@extend_schema(tags=['QORGO Agent'])
+class OperatorIncidentListView(generics.ListAPIView):
+    """Queue for responders. Operators only receive active incidents and their own history."""
+    permission_classes = [permissions.IsAuthenticated, IsEmergencyOperator]
+    serializer_class = OperatorIncidentSerializer
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Alert.objects.none()
+        return Alert.objects.select_related('user', 'assigned_operator').filter(
+            status=Alert.Status.ACTIVE,
+        ).order_by('assigned_at', '-started_at')
+
+
+@extend_schema(tags=['QORGO Agent'])
+class OperatorIncidentDetailView(generics.RetrieveAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsEmergencyOperator]
+    serializer_class = OperatorIncidentSerializer
+    queryset = Alert.objects.select_related('user', 'assigned_operator')
+
+
+@extend_schema(tags=['QORGO Agent'])
+class OperatorTakeIncidentView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsEmergencyOperator]
+
+    @extend_schema(request=None, responses=OperatorIncidentSerializer)
+    def post(self, request, alert_id):
+        with transaction.atomic():
+            alert = Alert.objects.select_for_update().select_related('assigned_operator').filter(
+                id=alert_id, status=Alert.Status.ACTIVE).first()
+            if not alert:
+                return Response({'detail': 'Активный инцидент не найден.'}, status=status.HTTP_404_NOT_FOUND)
+            if alert.assigned_operator_id and alert.assigned_operator_id != request.user.id:
+                return Response({'detail': 'Инцидент уже принят другим оператором.'}, status=status.HTTP_409_CONFLICT)
+            if not alert.assigned_operator_id:
+                alert.assigned_operator = request.user
+                alert.assigned_at = timezone.now()
+                alert.save(update_fields=['assigned_operator', 'assigned_at'])
+        return Response(OperatorIncidentSerializer(alert).data)
+
+
+@extend_schema(tags=['QORGO Agent'])
+class OperatorCloseIncidentView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsEmergencyOperator]
+
+    @extend_schema(request=OperatorIncidentUpdateSerializer, responses=OperatorIncidentSerializer)
+    def post(self, request, alert_id):
+        data = OperatorIncidentUpdateSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        with transaction.atomic():
+            alert = Alert.objects.select_for_update().select_related('assigned_operator').filter(
+                id=alert_id, status=Alert.Status.ACTIVE).first()
+            if not alert:
+                return Response({'detail': 'Активный инцидент не найден.'}, status=status.HTTP_404_NOT_FOUND)
+            if alert.assigned_operator_id != request.user.id:
+                return Response({'detail': 'Сначала примите инцидент в работу.'}, status=status.HTTP_403_FORBIDDEN)
+            alert.status = data.validated_data.get('status', Alert.Status.RESOLVED)
+            alert.operator_note = data.validated_data.get('note', alert.operator_note)
+            alert.resolved_at = timezone.now()
+            alert.resolved_by = request.user
+            alert.save(update_fields=['status', 'operator_note', 'resolved_at', 'resolved_by'])
+        return Response(OperatorIncidentSerializer(alert).data)
