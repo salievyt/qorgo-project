@@ -222,7 +222,7 @@ SIMPLE_JWT = {
 # CORS
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://localhost:8000'
+    default='http://localhost:3000,http://localhost:8000,https://operator.qorgo.services'
 ).split(',')
 CORS_ALLOW_CREDENTIALS = True
 
