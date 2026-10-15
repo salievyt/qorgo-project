@@ -1,5 +1,6 @@
 import '../../core/design/qorgo_brand.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import '../../core/widgets/bottom_nav_bar.dart';
 import '../../core/design/qorgo_theme.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,7 @@ class SafetyView extends StatefulWidget {
 }
 
 class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
+  static const _sosChannel = MethodChannel('qorgo/sos');
   int _tab = 0;
   bool _protectionExplained = false;
   AppViewModel get c => widget.controller;
@@ -56,6 +58,29 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
               ));
       if (send == true) await c.activateSos();
     });
+  }
+
+  Future<void> _addSosShortcut() async {
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'На iPhone добавьте QORGO SOS через настройку экрана блокировки.')));
+      return;
+    }
+
+    try {
+      final state = await _sosChannel.invokeMethod<String>('requestAddTile');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(state == 'added'
+              ? 'QORGO SOS добавлена в быстрые настройки.'
+              : 'Подтвердите добавление QORGO SOS в системном диалоге или добавьте её через редактирование быстрых настроек.')));
+    } on PlatformException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'Не удалось открыть системное добавление. Добавьте QORGO SOS в быстрые настройки телефона.')));
+    }
   }
 
   Future<void> _explainProtection() async {
@@ -459,11 +484,13 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
           value: c.continuousProtection,
           onChanged: c.busy ? null : c.setContinuousProtection,
         )),
-        _card(const ListTile(
-          leading: Icon(Icons.lock_outline, color: QorgoDesign.accent),
-          title: Text('SOS на экране блокировки'),
-          subtitle: Text(
-              'Android: добавьте плитку «QORGO SOS» в быстрые настройки телефона. Нажатие откроет подтверждение SOS.'),
+        _card(ListTile(
+          leading: const Icon(Icons.lock_outline, color: QorgoDesign.accent),
+          title: const Text('SOS на экране блокировки'),
+          subtitle: const Text(
+              'Добавьте быстрый доступ QORGO SOS. Нажатие всегда попросит подтвердить вызов.'),
+          trailing: FilledButton(
+              onPressed: _addSosShortcut, child: const Text('Добавить')),
         )),
         const Text(
             'Координаты хранятся до 30 дней. Отключить защиту можно в любой момент.',
