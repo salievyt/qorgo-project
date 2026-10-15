@@ -1,0 +1,78 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static jazzmin %}
+{% get_jazzmin_ui_tweaks as jazzmin_ui %}
+
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+{% block content_title %}Главная панель{% endblock %}
+{% block breadcrumbs %}
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">QORGO</a></li>
+  <li class="breadcrumb-item active">Главная панель</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <div class="card card-outline card-success mb-4">
+    <div class="card-header"><h2 class="card-title mb-0">С чего начать</h2></div>
+    <div class="card-body">
+      <p class="mb-3">Выберите нужный раздел. Изменения лендинга становятся видны на сайте сразу после сохранения.</p>
+      <div class="row">
+        {% if perms.content.view_text %}
+        <div class="col-xl-3 col-md-6 mb-3"><a class="btn btn-success btn-block py-3" href="{% url 'admin:content_text_changelist' %}"><i class="fas fa-globe mr-2"></i>Редактировать сайт</a><small class="d-block text-muted mt-2">Тексты, ссылки, тарифы, FAQ и документы</small></div>
+        {% endif %}
+        {% if perms.accounts.view_user %}
+        <div class="col-xl-3 col-md-6 mb-3"><a class="btn btn-outline-success btn-block py-3" href="{% url 'admin:accounts_user_changelist' %}"><i class="fas fa-users mr-2"></i>Пользователи</a><small class="d-block text-muted mt-2">Профили, контакты и доступ</small></div>
+        {% endif %}
+        {% if perms.sos.view_alert %}
+        <div class="col-xl-3 col-md-6 mb-3"><a class="btn btn-outline-danger btn-block py-3" href="{% url 'admin:sos_alert_changelist' %}"><i class="fas fa-bell mr-2"></i>Сигналы SOS</a><small class="d-block text-muted mt-2">Открытые тревоги и история</small></div>
+        {% endif %}
+        {% if perms.families.view_family %}
+        <div class="col-xl-3 col-md-6 mb-3"><a class="btn btn-outline-secondary btn-block py-3" href="{% url 'admin:families_family_changelist' %}"><i class="fas fa-user-friends mr-2"></i>Семьи</a><small class="d-block text-muted mt-2">Круги безопасности и участники</small></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-9 col-12">
+      {% get_side_menu using="app_list" as dashboard_list %}
+      <div class="row">
+        {% for app in dashboard_list %}
+        <div class="col-xl-6 col-12">
+          <div class="card mb-3">
+            <div class="card-header"><h3 class="card-title mb-0">{{ app.name }}</h3></div>
+            <div class="card-body p-0">
+              <div class="list-group list-group-flush">
+                {% for model in app.models %}
+                <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
+                  {% if model.url %}<a href="{{ model.url }}" class="font-weight-bold">{{ model.name }}</a>{% else %}<span>{{ model.name }}</span>{% endif %}
+                  <span class="btn-group mt-1">
+                    {% if model.add_url %}<a href="{{ model.add_url }}" class="btn btn-sm {{ jazzmin_ui.button_classes.success }}">Добавить</a>{% endif %}
+                    {% if model.url %}<a href="{{ model.url }}" class="btn btn-sm {{ jazzmin_ui.button_classes.info }}">{% if model.view_only %}Открыть{% else %}Управлять{% endif %}</a>{% endif %}
+                  </span>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12"><div class="alert alert-info">У вашей учётной записи пока нет доступных разделов. Попросите администратора настроить права доступа.</div></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-12">
+      <div class="card card-outline card-secondary">
+        <div class="card-header"><h3 class="card-title mb-0">Подсказки</h3></div>
+        <div class="card-body">
+          <p><strong>Контент сайта</strong><br>Выберите строку текста, измените содержимое и нажмите «Сохранить». Ключи нужны системе для размещения текста и обычно не меняются.</p>
+          <p><strong>Файлы</strong><br>Добавьте файл, затем выберите его в разделе «Ссылки лендинга». Максимальный размер — 4 МБ.</p>
+          <p class="mb-0"><strong>Поиск</strong><br>Используйте строку поиска сверху для аккаунтов и сигналов SOS.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

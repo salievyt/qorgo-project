@@ -1,4 +1,5 @@
 from django.contrib import admin
+import qorgo.admin  # noqa: F401 — configure the branded admin site before autodiscovery.
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static

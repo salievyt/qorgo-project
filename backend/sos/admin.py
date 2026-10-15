@@ -1,9 +1,10 @@
 from django.contrib import admin
+from qorgo.admin import QorgoAdminLabelsMixin
 from .models import Alert, EvidenceRecording
 
 
 @admin.register(Alert)
-class AlertAdmin(admin.ModelAdmin):
+class AlertAdmin(QorgoAdminLabelsMixin, admin.ModelAdmin):
     list_display = ('id', 'user', 'status', 'trigger_method', 'started_at', 'resolved_at')
     list_filter = ('status', 'trigger_method', 'started_at')
     search_fields = ('user__phone_number', 'address')
@@ -11,6 +12,6 @@ class AlertAdmin(admin.ModelAdmin):
 
 
 @admin.register(EvidenceRecording)
-class EvidenceRecordingAdmin(admin.ModelAdmin):
+class EvidenceRecordingAdmin(QorgoAdminLabelsMixin, admin.ModelAdmin):
     list_display = ('id', 'alert', 'evidence_type', 'user', 'created_at')
     list_filter = ('evidence_type',)

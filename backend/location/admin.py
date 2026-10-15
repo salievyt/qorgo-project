@@ -1,9 +1,10 @@
 from django.contrib import admin
+from qorgo.admin import QorgoAdminLabelsMixin
 from .models import LocationUpdate, ActiveLocation
 
 
 @admin.register(LocationUpdate)
-class LocationUpdateAdmin(admin.ModelAdmin):
+class LocationUpdateAdmin(QorgoAdminLabelsMixin, admin.ModelAdmin):
     list_display = ('user', 'latitude', 'longitude', 'speed', 'battery_level', 'is_background', 'timestamp')
     list_filter = ('is_background', 'timestamp')
     search_fields = ('user__phone_number',)
@@ -11,6 +12,6 @@ class LocationUpdateAdmin(admin.ModelAdmin):
 
 
 @admin.register(ActiveLocation)
-class ActiveLocationAdmin(admin.ModelAdmin):
+class ActiveLocationAdmin(QorgoAdminLabelsMixin, admin.ModelAdmin):
     list_display = ('user', 'latitude', 'longitude', 'speed', 'battery_level', 'is_stale', 'last_updated')
     list_filter = ('is_stale',)
