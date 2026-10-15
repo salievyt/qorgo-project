@@ -16,6 +16,11 @@ void main() {
     await controller.initialize();
     await tester.pumpWidget(
         QorgoApp(controller: controller, splashDuration: Duration.zero));
+    await tester.pump();
+    if (find.text('Не сейчас').evaluate().isNotEmpty) {
+      await tester.tap(find.text('Не сейчас'));
+      await tester.pumpAndSettle();
+    }
     expect(find.text('Нужна помощь?'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('Близкие'));
@@ -41,6 +46,11 @@ void main() {
     await controller.initialize();
     await tester.pumpWidget(
         QorgoApp(controller: controller, splashDuration: Duration.zero));
+    await tester.pump();
+    if (find.text('Не сейчас').evaluate().isNotEmpty) {
+      await tester.tap(find.text('Не сейчас'));
+      await tester.pumpAndSettle();
+    }
     expect(find.text('Создать аккаунт'), findsOneWidget);
     expect(find.text('ДЕМО'), findsNothing);
     await tester.pumpWidget(const SizedBox());

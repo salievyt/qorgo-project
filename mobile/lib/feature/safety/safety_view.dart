@@ -23,11 +23,36 @@ class SafetyView extends StatefulWidget {
 
 class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
   int _tab = 0;
+  bool _protectionExplained = false;
   AppViewModel get c => widget.controller;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _explainProtection());
+  }
+
+  Future<void> _explainProtection() async {
+    if (!mounted || _protectionExplained || !c.continuousProtection) return;
+    _protectionExplained = true;
+    final enabled = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+              title: const Text('Непрерывная защита'),
+              content: const Text(
+                  'QORGO будет передавать местоположение для безопасности: примерно раз в 30–60 секунд в движении и раз в 5–15 минут без движения. Во время SOS — чаще. Данные доступны доверенным близким и оператору только при активной тревоге, а история хранится 30 дней.'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Не сейчас')),
+                FilledButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Разрешить и включить')),
+              ],
+            ));
+    if (enabled == true) await c.startContinuousProtection();
+    if (enabled == false) await c.setContinuousProtection(false);
   }
 
   @override
@@ -393,6 +418,21 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
                     },
               child: const Text('Изменить профиль')),
         ])),
+        _card(SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Непрерывная защита',
+              style: TextStyle(fontWeight: FontWeight.w600)),
+          subtitle: Text(c.continuousProtection
+              ? (c.lastLocationSent == null
+                  ? 'Ожидаем разрешение геолокации'
+                  : 'Активна · последнее обновление ${timeLabel(c.lastLocationSent!)}')
+              : 'Приостановлена. SOS продолжит запрашивать координаты.'),
+          value: c.continuousProtection,
+          onChanged: c.busy ? null : c.setContinuousProtection,
+        )),
+        const Text(
+            'Координаты хранятся до 30 дней. Отключить защиту можно в любой момент.',
+            style: TextStyle(fontSize: 12, color: QorgoDesign.muted)),
         const SizedBox(height: 20),
         OutlinedButton(
             onPressed: c.busy ? null : c.logout,

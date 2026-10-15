@@ -43,6 +43,11 @@ void main() {
     await vm.initialize();
     await tester
         .pumpWidget(QorgoApp(controller: vm, splashDuration: Duration.zero));
+    await tester.pump();
+    if (find.text('Не сейчас').evaluate().isNotEmpty) {
+      await tester.tap(find.text('Не сейчас'));
+      await tester.pumpAndSettle();
+    }
     await tester.tap(find.text('Близкие'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Добавить близкого'));

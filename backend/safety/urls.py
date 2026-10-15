@@ -6,6 +6,7 @@ router.register('contacts', views.ContactViewSet, basename='contacts')
 router.register('alerts', views.AlertViewSet, basename='alerts')
 router.register('journeys', views.JourneyViewSet, basename='journeys')
 urlpatterns = [
+    path('api/location/', views.continuous_location),
     path('api/contacts/lookup/', views.lookup_contact),
     path('api/inbox/', views.inbox),
     path('api/inbox/<int:delivery_id>/acknowledge/', views.acknowledge),

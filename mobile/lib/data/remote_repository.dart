@@ -150,6 +150,14 @@ class RemoteSafetyRepository implements SafetyRepository {
   @override
   Future<void> finishJourney(int id, {required bool arrived}) async =>
       api.request('POST', 'journeys/$id/${arrived ? 'arrive' : 'cancel'}/');
+  @override
+  Future<void> recordLocation(GeoPoint point, {required bool background}) =>
+      api.request('POST', 'location/', {
+        'latitude': point.latitude,
+        'longitude': point.longitude,
+        'accuracy': point.accuracy,
+        'is_background': background,
+      });
   SafetyAlert _alert(Map<String, dynamic> value) => SafetyAlert(
         id: value['id'],
         createdAt: DateTime.parse(value['created_at']),

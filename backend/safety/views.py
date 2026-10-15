@@ -8,6 +8,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from datetime import timedelta
 from rest_framework import serializers, viewsets
 from rest_framework.decorators import api_view, permission_classes, authentication_classes, action, throttle_classes
 from rest_framework.permissions import AllowAny
@@ -20,6 +21,7 @@ from .serializers import ContactSerializer, AlertSerializer, AlertInputSerialize
 from .services import create_alert, finish_journey, process_deadlines
 from .phone_contacts import normalize_phone, registered_user, PhoneLookupInput, PhoneLookupOutput
 from rest_framework.throttling import UserRateThrottle
+from location.models import LocationUpdate, ActiveLocation
 
 class Credentials(serializers.Serializer):
     email = serializers.EmailField(max_length=150)
@@ -243,6 +245,44 @@ def acknowledge(request, delivery_id):
 class ContactLookupThrottle(UserRateThrottle):
     scope = 'contact_lookup'
     rate = '30/min'
+
+
+class LocationInput(serializers.Serializer):
+    latitude = serializers.FloatField(min_value=-90, max_value=90)
+    longitude = serializers.FloatField(min_value=-180, max_value=180)
+    accuracy = serializers.FloatField(min_value=0, default=0)
+    speed = serializers.FloatField(min_value=0, default=0)
+    is_background = serializers.BooleanField(default=False)
+
+
+@extend_schema(tags=['Mobile MVP'], request=LocationInput)
+@api_view(['POST', 'GET'])
+@authentication_classes([TokenAuthentication])
+def continuous_location(request):
+    """Token-authenticated tracking endpoint used by the Flutter MVP.
+
+    Records are retained for 30 days; the latest point is shown in Django admin.
+    """
+    if request.method == 'GET':
+        points = LocationUpdate.objects.filter(user=request.user).order_by('-timestamp')[:100]
+        return Response([{'latitude': p.latitude, 'longitude': p.longitude,
+                          'accuracy': p.accuracy, 'speed': p.speed,
+                          'is_background': p.is_background,
+                          'timestamp': p.timestamp} for p in points])
+    data = LocationInput(data=request.data)
+    data.is_valid(raise_exception=True)
+    values = data.validated_data
+    with transaction.atomic():
+        point = LocationUpdate.objects.create(user=request.user, **values)
+        ActiveLocation.objects.update_or_create(user=request.user, defaults={
+            'latitude': point.latitude, 'longitude': point.longitude,
+            'accuracy': point.accuracy, 'speed': point.speed,
+            'is_stale': False,
+        })
+        LocationUpdate.objects.filter(
+            user=request.user, timestamp__lt=timezone.now() - timedelta(days=30)
+        ).delete()
+    return Response({'recorded_at': point.timestamp}, status=201)
 
 
 @extend_schema(tags=['Mobile MVP'], request=PhoneLookupInput, responses=PhoneLookupOutput)

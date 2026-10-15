@@ -47,6 +47,28 @@ class NativeDeviceGateway implements DeviceGateway {
     return GeoPoint(p.latitude, p.longitude, p.accuracy, p.timestamp);
   }
 
+  @override
+  Stream<GeoPoint> trackLocation() async* {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      throw const QorgoException('Включите геолокацию в настройках телефона.');
+    }
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      throw const QorgoException(
+          'Для непрерывной защиты нужен доступ к геолокации.');
+    }
+    const settings =
+        LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 30);
+    await for (final p
+        in Geolocator.getPositionStream(locationSettings: settings)) {
+      yield GeoPoint(p.latitude, p.longitude, p.accuracy, p.timestamp);
+    }
+  }
+
   Future<void> _open(Uri uri) async {
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       throw const QorgoException(

@@ -14,6 +14,9 @@ class SafetyViewModel extends ViewModel {
   String? error;
   DateTime? syncedAt;
   Timer? _poller;
+  StreamSubscription<GeoPoint>? _tracking;
+  bool continuousProtection = true;
+  DateTime? lastLocationSent;
   bool _refreshing = false;
   int _revision = 0;
   SafetyAlert? get activeAlert =>
@@ -25,6 +28,38 @@ class SafetyViewModel extends ViewModel {
     if (disposed) return;
     _poller ??= Timer.periodic(
         const Duration(seconds: 5), (_) => refresh(silent: true));
+  }
+
+  Future<void> startContinuousProtection() async {
+    if (!signedIn || !continuousProtection || _tracking != null) return;
+    try {
+      _tracking = device.trackLocation().listen((point) async {
+        final moving = point.accuracy <= 100;
+        final interval =
+            moving ? const Duration(seconds: 45) : const Duration(minutes: 10);
+        if (lastLocationSent == null ||
+            DateTime.now().difference(lastLocationSent!) >= interval) {
+          await repository.recordLocation(point, background: true);
+          location = point;
+          lastLocationSent = DateTime.now();
+          notifyState();
+        }
+      }, onError: _recordError);
+    } catch (e) {
+      _recordError(e);
+      notifyState();
+    }
+  }
+
+  Future<void> setContinuousProtection(bool enabled) async {
+    continuousProtection = enabled;
+    if (!enabled) {
+      await _tracking?.cancel();
+      _tracking = null;
+    } else {
+      await startContinuousProtection();
+    }
+    notifyState();
   }
 
   void _recordError(Object e) {
@@ -129,6 +164,7 @@ class SafetyViewModel extends ViewModel {
   @override
   void dispose() {
     _poller?.cancel();
+    _tracking?.cancel();
     super.dispose();
   }
 }

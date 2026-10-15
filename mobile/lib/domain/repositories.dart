@@ -15,11 +15,13 @@ abstract interface class SafetyRepository {
   Future<void> retryAlert(int id);
   Future<void> startJourney(String destination, DateTime deadline);
   Future<void> finishJourney(int id, {required bool arrived});
+  Future<void> recordLocation(GeoPoint point, {required bool background});
 }
 
 abstract interface class DeviceGateway {
   Future<DeviceContact?> pickContact();
   Future<GeoPoint> locate();
+  Stream<GeoPoint> trackLocation();
   Future<void> openMap(GeoPoint point);
   Future<void> call(String phone);
   Future<void> composeSms(Contact contact, String message);

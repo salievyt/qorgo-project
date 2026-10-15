@@ -38,7 +38,11 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>QORGO использует ваше местоположение, чтобы передать координаты доверенным контактам при SOS.</string>
+	<string>QORGO использует ваше местоположение для непрерывной защиты, SOS и передачи координат доверенным близким.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>QORGO передаёт координаты в фоне, когда включена непрерывная защита. Вы можете приостановить её в любой момент.</string>
+	<key>UIBackgroundModes</key>
+	<array><string>location</string></array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
