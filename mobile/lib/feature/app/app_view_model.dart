@@ -1,4 +1,5 @@
 import '../../domain/repositories.dart';
+import '../../data/protection_consent_store.dart';
 import '../contacts/contact_lookup_view_model.dart';
 import '../auth/auth_view_model.dart';
 import '../safety/safety_view_model.dart';
@@ -7,10 +8,15 @@ import '../safety/safety_view_model.dart';
 class AppViewModel extends SafetyViewModel {
   // Explicit arguments allow the session view model to share the repository.
   // ignore: use_super_parameters
-  AppViewModel(SafetyRepository repository, DeviceGateway device)
+  AppViewModel(SafetyRepository repository, DeviceGateway device,
+      {ProtectionConsentStore? protectionConsent})
       : auth = AuthViewModel(repository),
+        _protectionConsent = protectionConsent ?? ProtectionConsentStore(),
         super(repository, device);
   final AuthViewModel auth;
+  final ProtectionConsentStore _protectionConsent;
+  Future<bool> shouldExplainProtection() => _protectionConsent.shouldExplain();
+  Future<void> markProtectionExplained() => _protectionConsent.markExplained();
   ContactLookupViewModel createContactLookup() =>
       ContactLookupViewModel(repository, device);
 

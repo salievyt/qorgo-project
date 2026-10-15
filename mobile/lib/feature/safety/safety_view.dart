@@ -34,6 +34,7 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
 
   Future<void> _explainProtection() async {
     if (!mounted || _protectionExplained || !c.continuousProtection) return;
+    if (!await c.shouldExplainProtection() || !mounted) return;
     _protectionExplained = true;
     final enabled = await showDialog<bool>(
         context: context,
@@ -51,6 +52,7 @@ class _SafetyViewState extends State<SafetyView> with WidgetsBindingObserver {
                     child: const Text('Разрешить и включить')),
               ],
             ));
+    await c.markProtectionExplained();
     if (enabled == true) await c.startContinuousProtection();
     if (enabled == false) await c.setContinuousProtection(false);
   }
