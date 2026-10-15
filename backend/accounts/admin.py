@@ -1,10 +1,21 @@
 from django.contrib import admin
+from django import forms
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.forms import UserChangeForm
 from qorgo.admin import QorgoAdminLabelsMixin
 from .models import User, EmergencyContact, PrivacySettings, DeviceInfo
 from .forms import QorgoAdminAuthenticationForm
 
 admin.site.login_form = QorgoAdminAuthenticationForm
+
+
+class QorgoUserChangeForm(UserChangeForm):
+    # Some mobile accounts have no username. The built-in UsernameField
+    # assumes a submitted value is always a string and raises on None.
+    username = forms.CharField(required=False)
+
+    def clean_username(self):
+        return self.cleaned_data['username'] or None
 
 
 class EmergencyContactInline(admin.TabularInline):
@@ -15,6 +26,7 @@ class EmergencyContactInline(admin.TabularInline):
 
 @admin.register(User)
 class UserAdmin(QorgoAdminLabelsMixin, BaseUserAdmin):
+    form = QorgoUserChangeForm
     list_display = ('username', 'phone_number', 'email', 'first_name', 'last_name', 'role', 'is_premium', 'is_active', 'last_active_at')
     list_filter = ('role', 'is_premium', 'gender', 'city', 'is_active', 'date_joined')
     search_fields = ('username', 'phone_number', 'email', 'first_name', 'last_name')

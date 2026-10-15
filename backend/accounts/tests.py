@@ -55,6 +55,19 @@ class TestUserModel:
 
 
 @pytest.mark.django_db
+class TestUserAdminForm:
+    def test_null_username_is_safe_when_admin_form_is_submitted(self, user):
+        from accounts.admin import QorgoUserChangeForm
+
+        form = QorgoUserChangeForm(instance=user)
+        # A missing value in POST data is None. Django's default UsernameField
+        # calls len(None); the admin form must treat it as an empty username.
+        assert form.fields['username'].clean(None) == ''
+        form.cleaned_data = {'username': ''}
+        assert form.clean_username() is None
+
+
+@pytest.mark.django_db
 class TestPrivacySettings:
     """Test PrivacySettings model."""
 
